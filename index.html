@@ -220,10 +220,18 @@ async function loadFromSheet() {
     var res  = await fetch(GAS_URL);
     var data = await res.json();
 
-    // 주문: ID를 문자열로 고정 보존 (Date.now() 대체 금지)
-    orders = (data.orders||[]).map(function(o, i){
-      var rawId = o['ID'] !== undefined && o['ID'] !== '' ? String(o['ID']) : 'order_'+i;
+    // 주문: ID 고정 + 완전 중복 제거 (같은 주문자+날짜+합계 중복 제거)
+    var rawOrders = (data.orders||[]).map(function(o, i){
+      var rawId = (o['ID'] !== undefined && o['ID'] !== '' && o['ID'] !== null) ? String(o['ID']).trim() : '';
+      if (!rawId) rawId = 'order_'+i+'_'+Date.now();
       return { id: rawId, orderer:o['주문자']||'', name:o['이름(받는분)']||'', phone:o['전화번호']||'', address:o['주소']||'', items:parseItems(o['품목']||''), total:Number(o['합계'])||0, date:o['날짜']||'', memo:o['메모']||'', createdAt:o['등록일']||'' };
+    });
+    // ID 기준 중복 제거 (같은 ID면 첫 번째만 유지)
+    var seenOrders = {};
+    orders = rawOrders.filter(function(o){
+      if (seenOrders[o.id]) return false;
+      seenOrders[o.id] = true;
+      return true;
     });
 
     // 고객: 전화번호 기준 중복 제거 후 저장
@@ -527,8 +535,13 @@ function submitOrder() {
     : customers.find(function(c){ return !c.phone&&c.orderer===orderForm.orderer; });
 
   if (!existing) {
-    customers.push({ id:Date.now(), orderer:orderForm.orderer, name:recvName, phone:recvPhone, address:orderForm.address, createdAt:today() });
-  } else { existing.orderer=orderForm.orderer; existing.name=recvName; existing.address=orderForm.address; }
+    customers.push({ id:String(Date.now()), orderer:orderForm.orderer, name:recvName, phone:recvPhone, address:orderForm.address, createdAt:today() });
+  } else {
+    existing.orderer = orderForm.orderer;
+    existing.name    = recvName;
+    existing.address = orderForm.address;
+    existing.phone   = recvPhone;
+  }
   saveCustomers(customers);
 
   var saveForm = Object.assign({}, orderForm, { name:recvName });
