@@ -8,7 +8,7 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #fff5ee; --card: #ffffff; --dark: #2d3a2e;
+    --bg: #ffe8d6; --card: #ffffff; --dark: #2d3a2e;
     --green: #7cb87a; --green-light: #e8f5e4;
     --orange: #f0956a; --orange-light: #fef0e8;
     --brown: #7a6a5a; --muted: #9aaa96;
@@ -20,12 +20,12 @@
 
   header { background: linear-gradient(135deg, #7cb87a 0%, #a8d5a2 100%); padding: 0 16px; box-shadow: 0 2px 12px rgba(124,184,122,0.25); position: relative; overflow: hidden; }
   header::before { content: ''; position: absolute; inset: 0; background: url('https://raw.githubusercontent.com/sparrowgrass-cyber/Sparrowgrass-Farm/main/KakaoTalk_20250405_030256895_01.jpg') center/cover no-repeat; opacity: 0.25; z-index: 0; }
-  .header-inner { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 12px 0 10px; flex-wrap: nowrap; gap: 8px; overflow: hidden; }
+  .header-inner { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 12px 0 10px; flex-wrap: wrap; gap: 8px; }
   .logo { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
   .logo-title { color: #fff; font-weight: 700; font-size: 17px; letter-spacing: -0.3px; text-shadow: 0 1px 3px rgba(0,0,0,0.1); white-space: nowrap; }
   .logo-sub { color: rgba(255,255,255,0.8); font-size: 11px; margin-top: 1px; white-space: nowrap; }
-  .nav { display: flex; gap: 2px; background: rgba(255,255,255,0.25); border-radius: 30px; padding: 3px; backdrop-filter: blur(4px); flex-wrap: nowrap; flex-shrink: 1; }
-  .nav-btn { padding: 8px 10px; border-radius: 24px; font-size: 17px !important; font-weight: 500; color: rgba(255,255,255,0.85); transition: all 0.2s; white-space: nowrap; }
+  .nav { display: flex; gap: 4px; background: rgba(255,255,255,0.25); border-radius: 30px; padding: 4px; backdrop-filter: blur(4px); flex-wrap: wrap; justify-content: center; }
+  .nav-btn { padding: 8px 14px; border-radius: 24px; font-size: 17px !important; font-weight: 500; color: rgba(255,255,255,0.85); transition: all 0.2s; white-space: nowrap; flex: 1; text-align: center; min-width: fit-content; }
   .nav-btn.active { background: white; color: var(--green); font-weight: 700; }
   .nav-btn:hover:not(.active) { background: rgba(255,255,255,0.2); color: white; }
 
@@ -110,6 +110,9 @@
   .hint-box { font-size: 12px; color: var(--muted); padding: 8px 12px; background: var(--orange-light); border-radius: 8px; border-left: 3px solid var(--orange); }
 
   @media (max-width: 500px) {
+    .header-inner { justify-content: center; flex-direction: column; align-items: center; gap: 10px; }
+    .nav { width: 100%; }
+    .nav-btn { font-size: 16px !important; padding: 8px 0; }
     .grid-2 { grid-template-columns: 1fr; }
     .items-header, .item-row { grid-template-columns: 2fr 45px 80px 28px; }
     .prod-row { grid-template-columns: 1fr 100px 44px 28px; }
