@@ -25,7 +25,7 @@
   .logo-title { color: #fff; font-weight: 700; font-size: 17px; letter-spacing: -0.3px; text-shadow: 0 1px 3px rgba(0,0,0,0.1); white-space: nowrap; }
   .logo-sub { color: rgba(255,255,255,0.8); font-size: 11px; margin-top: 1px; white-space: nowrap; }
   .nav { display: flex; gap: 2px; background: rgba(255,255,255,0.25); border-radius: 30px; padding: 3px; backdrop-filter: blur(4px); flex-wrap: nowrap; flex-shrink: 1; }
-  .nav-btn { padding: 8px 10px; border-radius: 24px; font-size: clamp(15px, 3.8vw, 19px); font-weight: 500; color: rgba(255,255,255,0.85); transition: all 0.2s; white-space: nowrap; }
+  .nav-btn { padding: 8px 10px; border-radius: 24px; font-size: 17px !important; font-weight: 500; color: rgba(255,255,255,0.85); transition: all 0.2s; white-space: nowrap; }
   .nav-btn.active { background: white; color: var(--green); font-weight: 700; }
   .nav-btn:hover:not(.active) { background: rgba(255,255,255,0.2); color: white; }
 
@@ -110,7 +110,6 @@
   .hint-box { font-size: 12px; color: var(--muted); padding: 8px 12px; background: var(--orange-light); border-radius: 8px; border-left: 3px solid var(--orange); }
 
   @media (max-width: 500px) {
-    .nav-btn { padding: 7px 8px; font-size: 15px; }
     .grid-2 { grid-template-columns: 1fr; }
     .items-header, .item-row { grid-template-columns: 2fr 45px 80px 28px; }
     .prod-row { grid-template-columns: 1fr 100px 44px 28px; }
