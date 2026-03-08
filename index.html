@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌾 참새풀농원 고객관리</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f5f2eb; --card: #ffffff; --dark: #2c2416;
+    --green: #3d6b2f; --green-light: #e8f5e1;
+    --brown: #6b5c44; --muted: #8a7560;
+    --border: #d4cbbf; --tag: #b8a88a; --row: #f0ece4;
+  }
+  body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--dark); min-height: 100vh; }
+  input, select, textarea, button { font-family: inherit; }
+  button { cursor: pointer; border: none; background: none; }
+
+  header { background: var(--dark); padding: 0 16px; }
+  .header-inner { max-width: 720px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 16px 0 12px; flex-wrap: wrap; gap: 10px; }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon { font-size: 24px; }
+  .logo-title { color: var(--bg); font-weight: 700; font-size: 16px; }
+  .logo-sub { color: var(--muted); font-size: 11px; margin-top: 1px; }
+  .nav { display: flex; gap: 3px; background: #3d3020; border-radius: 30px; padding: 4px; }
+  .nav-btn { padding: 7px 13px; border-radius: 24px; font-size: 12px; font-weight: 500; color: var(--muted); transition: all 0.2s; }
+  .nav-btn.active { background: var(--green); color: white; }
+  .nav-btn:hover:not(.active) { background: #4a3c28; color: var(--bg); }
+
+  main { max-width: 720px; margin: 0 auto; padding: 24px 14px 80px; }
+
+  .card { background: var(--card); border-radius: 16px; padding: 20px; margin-bottom: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+  .card-title { font-size: 13px; font-weight: 600; color: var(--green); display: flex; align-items: center; gap: 6px; margin-bottom: 16px; }
+
+  .field-label { display: block; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 5px; }
+  .text-input { width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px; background: white; color: var(--dark); transition: border 0.2s; }
+  .text-input:focus { outline: none; border-color: var(--green); }
+  select.text-input { cursor: pointer; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .autocomplete { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: white; border: 1.5px solid var(--border); border-radius: 12px; z-index: 200; box-shadow: 0 6px 20px rgba(0,0,0,0.12); overflow: hidden; display: none; }
+  .autocomplete.show { display: block; }
+  .ac-item { padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--row); display: flex; justify-content: space-between; align-items: center; transition: background 0.1s; }
+  .ac-item:last-child { border-bottom: none; }
+  .ac-item:hover { background: var(--bg); }
+  .ac-name { font-weight: 600; font-size: 14px; }
+  .ac-phone { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .ac-count { font-size: 11px; color: var(--tag); }
+
+  .items-header { display: grid; grid-template-columns: 2fr 55px 95px 30px; gap: 7px; margin-bottom: 5px; }
+  .item-row { display: grid; grid-template-columns: 2fr 55px 95px 30px; gap: 7px; margin-bottom: 7px; align-items: center; }
+  .remove-btn { width: 28px; height: 28px; background: #fde8e8; color: #c0392b; border-radius: 7px; font-size: 17px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .total-row { border-top: 1.5px solid var(--row); margin-top: 10px; padding-top: 12px; display: flex; justify-content: space-between; align-items: center; }
+  .total-amount { font-weight: 700; font-size: 20px; color: var(--dark); }
+
+  .btn-primary { width: 100%; background: var(--green); color: white; padding: 15px; border-radius: 14px; font-size: 16px; font-weight: 700; box-shadow: 0 4px 16px rgba(61,107,47,0.28); transition: transform 0.1s, box-shadow 0.1s; }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(61,107,47,0.38); }
+  .btn-add { background: var(--green-light); color: var(--green); padding: 6px 13px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+  .btn-green-sm { background: var(--green-light); color: var(--green); padding: 6px 13px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+  .btn-gray-sm { background: var(--row); color: var(--brown); padding: 6px 13px; border-radius: 20px; font-size: 13px; font-weight: 500; }
+  .btn-red-sm { background: #fde8e8; color: #c0392b; padding: 6px 13px; border-radius: 20px; font-size: 13px; font-weight: 500; }
+  .btn-save { background: var(--green); color: white; padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+
+  .order-card { background: var(--card); border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 4px solid var(--green); }
+  .order-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .order-name { font-weight: 700; font-size: 15px; }
+  .order-phone { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .order-addr { font-size: 12px; color: var(--tag); margin-top: 2px; }
+  .order-amount { font-weight: 700; color: var(--green); font-size: 15px; text-align: right; }
+  .order-date { font-size: 12px; color: var(--tag); }
+  .order-items { background: var(--bg); border-radius: 10px; padding: 9px 11px; margin-bottom: 9px; }
+  .order-item-row { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; }
+  .order-memo { font-size: 12px; color: var(--muted); margin-bottom: 9px; }
+  .order-actions { display: flex; gap: 7px; justify-content: flex-end; }
+
+  .cust-card { background: var(--card); border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+  .cust-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 11px; }
+  .cust-name { font-weight: 700; font-size: 15px; }
+  .cust-info { font-size: 13px; color: var(--brown); margin-top: 3px; }
+  .cust-addr { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .cust-stat-val { font-weight: 700; color: var(--green); font-size: 14px; text-align: right; }
+  .cust-stat-cnt { font-size: 12px; color: var(--tag); }
+  .cust-reg { font-size: 11px; color: var(--border); margin-top: 2px; }
+  .cust-actions { display: flex; gap: 7px; justify-content: flex-end; }
+
+  .prod-row { display: grid; grid-template-columns: 1fr 120px 50px 34px; gap: 8px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--row); }
+  .prod-row:last-child { border-bottom: none; }
+  .prod-name { font-weight: 600; font-size: 14px; }
+  .prod-price { font-size: 14px; color: var(--green); font-weight: 600; }
+
+  #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-10px); background: var(--green); color: white; padding: 11px 24px; border-radius: 30px; font-size: 14px; font-weight: 500; box-shadow: 0 4px 20px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s; z-index: 1000; pointer-events: none; white-space: nowrap; }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #toast.error { background: #c0392b; }
+
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; background: var(--green-light); color: var(--green); }
+  .badge.new { margin-left: 8px; }
+  .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+  .page-title { font-size: 19px; font-weight: 700; }
+  .search-wrap { margin-bottom: 14px; }
+  .empty { text-align: center; padding: 50px 0; color: var(--tag); }
+  .empty-icon { font-size: 40px; margin-bottom: 10px; }
+  .hint-box { font-size: 12px; color: var(--muted); padding: 8px 12px; background: var(--row); border-radius: 8px; }
+
+  @media (max-width: 500px) {
+    .nav-btn { padding: 6px 9px; font-size: 11px; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .items-header, .item-row { grid-template-columns: 2fr 45px 80px 28px; }
+    .prod-row { grid-template-columns: 1fr 100px 44px 28px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">🌾</div>
+      <div>
+        <div class="logo-title">참새풀농원</div>
+        <div class="logo-sub">직거래 고객관리</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <button class="nav-btn active" data-view="newOrder" onclick="switchView('newOrder')">주문등록</button>
+      <button class="nav-btn" data-view="history" onclick="switchView('history')">주문내역</button>
+      <button class="nav-btn" data-view="customers" onclick="switchView('customers')">고객목록</button>
+      <button class="nav-btn" data-view="products" onclick="switchView('products')">제품관리</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div id="view-newOrder"></div>
+  <div id="view-history" style="display:none"></div>
+  <div id="view-customers" style="display:none"></div>
+  <div id="view-products" style="display:none"></div>
+</main>
+<div id="toast"></div>
+
+<script>
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbzTeHH_TaPTaHytQzQbh-aqCcJ1BzJoigRh3hQ0nrRtm7ck78dlw8Hxt_W9uZu-PRA52g/exec';
+
+// ── 제품 관리 (브라우저 저장) ──
+var DEFAULT_PRODUCTS = [
+  { name: '대', price: 0 }, { name: '중', price: 0 },
+  { name: '대중혼합', price: 0 }, { name: '작두콩차', price: 0 }
+];
+function loadProducts() { try { var d=localStorage.getItem('farm_products'); return d ? JSON.parse(d) : null; } catch(e) { return null; } }
+function saveProductsLocal(d) { localStorage.setItem('farm_products', JSON.stringify(d)); }
+var products = loadProducts() || DEFAULT_PRODUCTS;
+
+// ── 고객/주문 캐시 ──
+function loadCustomers() { try { return JSON.parse(localStorage.getItem('farm_customers')||'[]'); } catch(e) { return []; } }
+function loadOrders()    { try { return JSON.parse(localStorage.getItem('farm_orders')||'[]');    } catch(e) { return []; } }
+function saveCustomers(d) { localStorage.setItem('farm_customers', JSON.stringify(d)); }
+function saveOrders(d)    { localStorage.setItem('farm_orders',    JSON.stringify(d)); }
+
+var customers = loadCustomers();
+var orders    = loadOrders();
+var currentView = 'newOrder';
+var editOrderId = null;
+var orderForm   = emptyForm();
+var editingCustomerId  = null;
+var editingProductIdx  = -1;
+var addingProduct      = false;
+
+function emptyForm() { return { orderer:'', name:'', phone:'', address:'', memo:'', date:today(), items:[{product:'',qty:1,price:''}] }; }
+function today() { return new Date().toISOString().slice(0,10); }
+
+// ── Toast ──
+function showToast(msg, type) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (type==='error' ? ' error' : '');
+  setTimeout(function(){ t.className=''; }, 2600);
+}
+
+// ── Loading bar ──
+function showLoading(on) {
+  var el = document.getElementById('loading-bar');
+  if (!el) { el=document.createElement('div'); el.id='loading-bar'; el.style.cssText='position:fixed;top:0;left:0;right:0;height:3px;background:var(--green);z-index:2000;transition:opacity .4s;'; document.body.appendChild(el); }
+  el.style.opacity = on ? '1' : '0';
+}
+
+// ── 구글 시트 로드 ──
+async function loadFromSheet() {
+  try {
+    showLoading(true);
+    var res  = await fetch(GAS_URL);
+    var data = await res.json();
+    customers = (data.customers||[]).map(function(c,i){
+      return { id:i+1, orderer:c['주문자']||'', name:c['이름(받는분)']||c['주문자']||'', phone:c['전화번호']||'', address:c['주소']||'', createdAt:c['등록일']||'' };
+    });
+    orders = (data.orders||[]).map(function(o){
+      return { id:Number(o['ID'])||Date.now(), orderer:o['주문자']||'', name:o['이름(받는분)']||'', phone:o['전화번호']||'', address:o['주소']||'', items:parseItems(o['품목']||''), total:Number(o['합계'])||0, date:o['날짜']||'', memo:o['메모']||'', createdAt:o['등록일']||'' };
+    });
+    saveCustomers(customers); saveOrders(orders);
+    showLoading(false); switchView(currentView);
+  } catch(err) {
+    showLoading(false);
+    showToast('데이터 불러오기 실패. 인터넷 연결을 확인해주세요.', 'error');
+    switchView(currentView);
+  }
+}
+
+function parseItems(str) {
+  if (!str) return [{product:'',qty:1,price:''}];
+  return str.split(',').map(function(s){
+    var m = s.trim().match(/^(.+)x(\d+)$/);
+    if (m) return { product:m[1].trim(), qty:parseInt(m[2]), price:getProductPrice(m[1].trim()) };
+    return { product:s.trim(), qty:1, price:getProductPrice(s.trim()) };
+  });
+}
+
+async function postToSheet(payload) {
+  var res = await fetch(GAS_URL, { method:'POST', body:JSON.stringify(payload) });
+  return await res.json();
+}
+
+function getProductPrice(name) {
+  var p = products.find(function(x){ return x.name===name; });
+  return (p && p.price) ? p.price : '';
+}
+
+// ── Phone format ──
+function formatPhone(v) {
+  var d = v.replace(/\D/g,'').slice(0,11);
+  if (d.length<=3) return d;
+  if (d.length<=7) return d.slice(0,3)+'-'+d.slice(3);
+  return d.slice(0,3)+'-'+d.slice(3,7)+'-'+d.slice(7);
+}
+
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Navigation ──
+function switchView(v) {
+  currentView = v;
+  ['newOrder','history','customers','products'].forEach(function(id){
+    document.getElementById('view-'+id).style.display = id===v ? '' : 'none';
+    var btn = document.querySelector('[data-view="'+id+'"]');
+    if (btn) btn.classList.toggle('active', id===v);
+  });
+  if (v==='newOrder')  renderOrderForm();
+  if (v==='history')   renderHistory('');
+  if (v==='customers') renderCustomers('');
+  if (v==='products')  renderProducts();
+}
+
+// ── Total ──
+function calcTotal(items) {
+  return items.reduce(function(s,item){
+    var p = parseInt((item.price+'').replace(/,/g,''))||0;
+    return s + p*(parseInt(item.qty)||1);
+  },0);
+}
+
+// ════════════════════════════════════════
+// 📋 주문 등록
+// ════════════════════════════════════════
+function renderOrderForm() {
+  var isNew = orderForm.phone && !editOrderId && !customers.find(function(c){ return c.phone===orderForm.phone; });
+  var con = document.getElementById('view-newOrder');
+  con.innerHTML =
+    '<div class="page-header">'+
+      '<h2 class="page-title">'+(editOrderId?'✏️ 주문 수정':'새 주문 등록')+'</h2>'+
+      (editOrderId?'<button class="btn-gray-sm" onclick="cancelEdit()">취소</button>':'')+
+    '</div>'+
+
+    '<div class="card">'+
+      '<div class="card-title">👤 고객 정보'+(isNew?'<span class="badge new">신규 고객</span>':'')+'</div>'+
+      '<div style="margin-bottom:12px;position:relative">'+
+        '<label class="field-label">주문자 *</label>'+
+        '<input id="f-orderer" class="text-input" value="'+esc(orderForm.orderer)+'" placeholder="주문하신 분 이름" oninput="onOrdererInput(this.value)" onblur="hideAC()">'+
+        '<div id="autocomplete" class="autocomplete"></div>'+
+      '</div>'+
+      '<div class="hint-box" style="margin-bottom:12px">📦 받는 분이 주문자와 다를 경우 아래에 입력하세요</div>'+
+      '<div class="grid-2" style="margin-bottom:12px">'+
+        '<div><label class="field-label">이름 (받는분)</label><input id="f-name" class="text-input" value="'+esc(orderForm.name)+'" placeholder="주문자와 동일하면 비워두세요" oninput="orderForm.name=this.value"></div>'+
+        '<div><label class="field-label">전화번호 (받는분)</label><input id="f-phone" class="text-input" value="'+esc(orderForm.phone)+'" placeholder="010-0000-0000" oninput="onPhoneInput(this.value)"></div>'+
+      '</div>'+
+      '<div style="margin-bottom:12px"><label class="field-label">배송 주소</label><input id="f-address" class="text-input" value="'+esc(orderForm.address)+'" placeholder="주소를 입력하세요" oninput="orderForm.address=this.value"></div>'+
+      '<div class="grid-2">'+
+        '<div><label class="field-label">주문일</label><input id="f-date" class="text-input" type="date" value="'+orderForm.date+'" onchange="orderForm.date=this.value"></div>'+
+        '<div><label class="field-label">메모</label><input id="f-memo" class="text-input" value="'+esc(orderForm.memo)+'" placeholder="특이사항" oninput="orderForm.memo=this.value"></div>'+
+      '</div>'+
+    '</div>'+
+
+    '<div class="card">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'+
+        '<div class="card-title" style="margin-bottom:0">🛒 주문 품목</div>'+
+        '<button class="btn-add" onclick="addItem()">+ 품목 추가</button>'+
+      '</div>'+
+      '<div class="items-header">'+
+        '<label class="field-label">품목</label>'+
+        '<label class="field-label" style="text-align:center">수량</label>'+
+        '<label class="field-label" style="text-align:right">단가(원)</label>'+
+        '<div></div>'+
+      '</div>'+
+      '<div id="items-container"></div>'+
+      '<div class="total-row"><span style="font-weight:600;color:var(--muted)">합계</span><span class="total-amount" id="total-display">0원</span></div>'+
+    '</div>'+
+    '<button class="btn-primary" onclick="submitOrder()">'+(editOrderId?'수정 완료':'🌾 주문 등록')+'</button>';
+
+  renderItems();
+}
+
+function renderItems() {
+  var c = document.getElementById('items-container');
+  if (!c) return;
+  var html = '';
+  for (var i=0; i<orderForm.items.length; i++) {
+    var item = orderForm.items[i];
+    var isCustom = item.product && item.product!=='__custom__' && !products.find(function(p){ return p.name===item.product; });
+    var opts = '<option value="">선택</option>';
+    for (var j=0; j<products.length; j++) {
+      var px = products[j];
+      opts += '<option value="'+esc(px.name)+'"'+(item.product===px.name?' selected':'')+'>'+esc(px.name)+(px.price?' ('+Number(px.price).toLocaleString()+'원)':'')+'</option>';
+    }
+    opts += '<option value="__custom__"'+(isCustom?' selected':'')+'>직접입력</option>';
+
+    html +=
+      '<div class="item-row">'+
+        '<div>'+
+          '<select class="text-input" onchange="onProductSelect('+i+',this.value)">'+opts+'</select>'+
+          (isCustom ? '<input class="text-input" style="margin-top:6px" value="'+esc(item.product)+'" oninput="updateItem('+i+',\'product\',this.value)" placeholder="품목명 입력">' : '')+
+        '</div>'+
+        '<input class="text-input" type="number" min="1" value="'+item.qty+'" style="text-align:center;padding:10px 4px" oninput="updateItem('+i+',\'qty\',this.value)">'+
+        '<input class="text-input" value="'+esc(item.price)+'" placeholder="0" style="text-align:right" oninput="updateItem('+i+',\'price\',this.value)">'+
+        (orderForm.items.length>1 ? '<button class="remove-btn" onclick="removeItem('+i+')">×</button>' : '<div></div>')+
+      '</div>';
+  }
+  c.innerHTML = html;
+  updateTotal();
+}
+
+function onProductSelect(i, val) {
+  if (val==='__custom__') {
+    orderForm.items[i].product = '__custom__';
+    orderForm.items[i].price   = '';
+  } else {
+    orderForm.items[i].product = val;
+    var p = products.find(function(x){ return x.name===val; });
+    orderForm.items[i].price = (p && p.price) ? p.price : '';
+  }
+  renderItems();
+}
+
+function updateTotal() {
+  var el = document.getElementById('total-display');
+  if (el) el.textContent = calcTotal(orderForm.items).toLocaleString()+'원';
+}
+function addItem()         { orderForm.items.push({product:'',qty:1,price:''}); renderItems(); }
+function removeItem(i)     { orderForm.items.splice(i,1); renderItems(); }
+function updateItem(i,f,v) { orderForm.items[i][f]=v; updateTotal(); }
+
+// ── Autocomplete ──
+function onOrdererInput(val) {
+  orderForm.orderer = val;
+  var ac = document.getElementById('autocomplete');
+  if (!ac) return;
+  if (!val) { ac.classList.remove('show'); return; }
+  var matches = customers.filter(function(c){
+    return (c.orderer||c.name).includes(val)||(c.phone||'').replace(/-/g,'').includes(val.replace(/-/g,''));
+  });
+  if (!matches.length) { ac.classList.remove('show'); return; }
+  var html='';
+  for (var i=0;i<matches.length;i++) {
+    var m=matches[i];
+    var cnt=orders.filter(function(o){ return o.phone===m.phone; }).length;
+    html+='<div class="ac-item" onmousedown="selectCustomer(\''+esc(m.phone)+'\')">'+
+      '<div><div class="ac-name">'+esc(m.orderer||m.name)+'</div>'+
+      '<div class="ac-phone">'+esc(m.phone)+(m.name&&m.name!==m.orderer?' · 받는분: '+esc(m.name):'')+
+      '</div></div><div class="ac-count">'+cnt+'회 주문</div></div>';
+  }
+  ac.innerHTML=html; ac.classList.add('show');
+}
+function hideAC() { setTimeout(function(){ var ac=document.getElementById('autocomplete'); if(ac) ac.classList.remove('show'); },160); }
+
+function selectCustomer(phone) {
+  var c=customers.find(function(x){ return x.phone===phone; });
+  if (!c) return;
+  orderForm.orderer=c.orderer||c.name; orderForm.name=c.name; orderForm.phone=c.phone; orderForm.address=c.address;
+  renderOrderForm();
+}
+function onPhoneInput(val) {
+  var fmt=formatPhone(val); orderForm.phone=fmt;
+  var el=document.getElementById('f-phone'); if(el) el.value=fmt;
+}
+function cancelEdit() { editOrderId=null; orderForm=emptyForm(); renderOrderForm(); }
+
+function submitOrder() {
+  if (!orderForm.orderer) { showToast('주문자 이름을 입력해주세요.','error'); return; }
+  if (orderForm.items.some(function(i){ return !i.product||i.product==='__custom__'; })) { showToast('품목을 선택해주세요.','error'); return; }
+
+  var recvName  = orderForm.name  || orderForm.orderer;
+  var recvPhone = orderForm.phone || '';
+  var existing  = recvPhone
+    ? customers.find(function(c){ return c.phone===recvPhone; })
+    : customers.find(function(c){ return !c.phone&&c.orderer===orderForm.orderer; });
+
+  if (!existing) {
+    customers.push({ id:Date.now(), orderer:orderForm.orderer, name:recvName, phone:recvPhone, address:orderForm.address, createdAt:today() });
+  } else { existing.orderer=orderForm.orderer; existing.name=recvName; existing.address=orderForm.address; }
+  saveCustomers(customers);
+
+  var saveForm = Object.assign({}, orderForm, { name:recvName });
+  var total    = calcTotal(orderForm.items);
+  var payload  = Object.assign({}, saveForm, { total:total, createdAt:today() });
+
+  if (editOrderId) {
+    var idx=orders.findIndex(function(o){ return o.id===editOrderId; });
+    if (idx>-1) orders[idx]=Object.assign({},orders[idx],saveForm,{total:total});
+    saveOrders(orders);
+    postToSheet(Object.assign({action:'updateOrder',id:editOrderId},payload))
+      .then(function(){ showToast('주문이 수정되었습니다. ✅'); })
+      .catch(function(){ showToast('시트 저장 실패. 인터넷을 확인해주세요.','error'); });
+    editOrderId=null;
+  } else {
+    var newId=Date.now();
+    orders.push(Object.assign({id:newId},saveForm,{total:total,createdAt:today()}));
+    saveOrders(orders);
+    postToSheet(Object.assign({action:'saveOrder',id:newId},payload))
+      .then(function(){ showToast('주문이 등록되었습니다! 🌾'); })
+      .catch(function(){ showToast('시트 저장 실패. 인터넷을 확인해주세요.','error'); });
+  }
+  orderForm=emptyForm(); renderOrderForm();
+}
+
+// ════════════════════════════════════════
+// 📦 주문 내역
+// ════════════════════════════════════════
+function renderHistory(search) {
+  var filtered=orders.filter(function(o){
+    return !search||(o.orderer||'').includes(search)||(o.name||'').includes(search)||(o.phone||'').includes(search)||(o.address||'').includes(search);
+  }).sort(function(a,b){ return b.id-a.id; });
+
+  var html='<div class="page-header"><h2 class="page-title">주문 내역</h2><span class="badge">총 '+orders.length+'건</span></div>'+
+    '<div class="search-wrap"><input class="text-input" value="'+esc(search)+'" placeholder="🔍 이름, 전화번호, 주소 검색" oninput="renderHistory(this.value)"></div>';
+
+  if (!filtered.length) { html+='<div class="empty"><div class="empty-icon">📦</div><div>주문 내역이 없습니다</div></div>'; }
+  else {
+    for (var i=0;i<filtered.length;i++) {
+      var o=filtered[i];
+      var ihtml='';
+      for (var j=0;j<(o.items||[]).length;j++) {
+        var it=o.items[j];
+        var lt=it.price?(parseInt(it.price)*(parseInt(it.qty)||1)).toLocaleString()+'원':'';
+        ihtml+='<div class="order-item-row"><span>'+esc(it.product)+' × '+it.qty+'</span><span style="color:var(--brown)">'+lt+'</span></div>';
+      }
+      html+='<div class="order-card">'+
+        '<div class="order-top">'+
+          '<div>'+
+            '<div class="order-name">🧑 '+esc(o.orderer||o.name)+'</div>'+
+            (o.name&&o.name!==(o.orderer||o.name)?'<div style="font-size:13px;color:var(--green);margin-top:2px">📦 받는분: '+esc(o.name)+'</div>':'')+
+            (o.phone?'<div class="order-phone">📞 '+esc(o.phone)+'</div>':'')+
+            (o.address?'<div class="order-addr">📍 '+esc(o.address)+'</div>':'')+
+          '</div>'+
+          '<div><div class="order-amount">'+(o.total||0).toLocaleString()+'원</div><div class="order-date">'+(o.date||'')+'</div></div>'+
+        '</div>'+
+        '<div class="order-items">'+ihtml+'</div>'+
+        (o.memo?'<div class="order-memo">📝 '+esc(o.memo)+'</div>':'')+
+        '<div class="order-actions">'+
+          '<button class="btn-gray-sm" onclick="startEditOrder('+o.id+')">수정</button>'+
+          '<button class="btn-red-sm" onclick="deleteOrder('+o.id+')">삭제</button>'+
+        '</div>'+
+      '</div>';
+    }
+  }
+  document.getElementById('view-history').innerHTML=html;
+}
+
+function deleteOrder(id) {
+  if (!confirm('이 주문을 삭제할까요?')) return;
+  orders=orders.filter(function(o){ return o.id!==id; }); saveOrders(orders);
+  postToSheet({action:'deleteOrder',id:id}).then(function(){ showToast('삭제되었습니다.'); }).catch(function(){ showToast('시트 삭제 실패.','error'); });
+  renderHistory('');
+}
+function startEditOrder(id) {
+  var o=orders.find(function(x){ return x.id===id; }); if(!o) return;
+  editOrderId=id;
+  orderForm={ orderer:o.orderer||'', name:o.name||'', phone:o.phone||'', address:o.address||'', memo:o.memo||'', date:o.date||today(), items:JSON.parse(JSON.stringify(o.items||[{product:'',qty:1,price:''}])) };
+  switchView('newOrder');
+}
+
+// ════════════════════════════════════════
+// 👥 고객 목록
+// ════════════════════════════════════════
+function renderCustomers(search) {
+  var filtered=customers.filter(function(c){
+    return !search||(c.orderer||'').includes(search)||(c.name||'').includes(search)||(c.phone||'').includes(search)||(c.address||'').includes(search);
+  }).sort(function(a,b){ return b.id-a.id; });
+
+  var html='<div class="page-header"><h2 class="page-title">고객 목록</h2><span class="badge">'+customers.length+'명</span></div>'+
+    '<div class="search-wrap"><input class="text-input" value="'+esc(search)+'" placeholder="🔍 이름, 전화번호, 주소 검색" oninput="renderCustomers(this.value)"></div>';
+
+  if (!filtered.length) { html+='<div class="empty"><div class="empty-icon">👥</div><div>등록된 고객이 없습니다</div></div>'; }
+  else {
+    for (var i=0;i<filtered.length;i++) {
+      var c=filtered[i];
+      var cnt=orders.filter(function(o){ return o.phone===c.phone; }).length;
+      var tot=orders.filter(function(o){ return o.phone===c.phone; }).reduce(function(s,o){ return s+(o.total||0); },0);
+      if (editingCustomerId===c.id) {
+        html+='<div class="cust-card">'+
+          '<div class="grid-2" style="margin-bottom:11px">'+
+            '<div><label class="field-label">주문자</label><input id="ec-orderer" class="text-input" value="'+esc(c.orderer||c.name)+'"></div>'+
+            '<div><label class="field-label">이름(받는분)</label><input id="ec-name" class="text-input" value="'+esc(c.name)+'"></div>'+
+          '</div>'+
+          '<div class="grid-2" style="margin-bottom:11px">'+
+            '<div><label class="field-label">전화번호(받는분)</label><input id="ec-phone" class="text-input" value="'+esc(c.phone)+'" oninput="this.value=formatPhone(this.value)"></div>'+
+            '<div></div>'+
+          '</div>'+
+          '<div style="margin-bottom:12px"><label class="field-label">주소</label><input id="ec-address" class="text-input" value="'+esc(c.address||'')+'"></div>'+
+          '<div style="display:flex;gap:7px;justify-content:flex-end">'+
+            '<button class="btn-gray-sm" onclick="cancelEditCustomer()">취소</button>'+
+            '<button class="btn-save" onclick="saveEditCustomer('+c.id+')">저장</button>'+
+          '</div>'+
+        '</div>';
+      } else {
+        html+='<div class="cust-card">'+
+          '<div class="cust-top">'+
+            '<div>'+
+              '<div class="cust-name">🧑 '+esc(c.orderer||c.name)+'</div>'+
+              (c.name&&c.name!==(c.orderer||c.name)?'<div style="font-size:13px;color:var(--green);margin-top:2px">📦 받는분: '+esc(c.name)+'</div>':'')+
+              '<div class="cust-info">📞 '+esc(c.phone)+'</div>'+
+              (c.address?'<div class="cust-addr">📍 '+esc(c.address)+'</div>':'')+
+            '</div>'+
+            '<div>'+
+              '<div class="cust-stat-val">'+tot.toLocaleString()+'원</div>'+
+              '<div class="cust-stat-cnt">총 '+cnt+'회 주문</div>'+
+              '<div class="cust-reg">가입 '+(c.createdAt||'')+'</div>'+
+            '</div>'+
+          '</div>'+
+          '<div class="cust-actions">'+
+            '<button class="btn-green-sm" onclick="quickOrder(\''+esc(c.phone)+'\')">+ 주문등록</button>'+
+            '<button class="btn-gray-sm" onclick="startEditCustomer('+c.id+')">수정</button>'+
+            '<button class="btn-red-sm" onclick="deleteCustomer('+c.id+',\''+esc(c.orderer||c.name)+'\')">삭제</button>'+
+          '</div>'+
+        '</div>';
+      }
+    }
+  }
+  document.getElementById('view-customers').innerHTML=html;
+}
+
+function quickOrder(phone) {
+  var c=customers.find(function(x){ return x.phone===phone; }); if(!c) return;
+  orderForm=emptyForm(); orderForm.orderer=c.orderer||c.name; orderForm.name=c.name; orderForm.phone=c.phone; orderForm.address=c.address||'';
+  switchView('newOrder');
+}
+function startEditCustomer(id)  { editingCustomerId=id;   renderCustomers(''); }
+function cancelEditCustomer()   { editingCustomerId=null; renderCustomers(''); }
+function saveEditCustomer(id) {
+  var orderer=document.getElementById('ec-orderer').value.trim();
+  var name=document.getElementById('ec-name').value.trim();
+  var phone=document.getElementById('ec-phone').value.trim();
+  var address=document.getElementById('ec-address').value.trim();
+  if (!orderer) { showToast('주문자 이름을 입력해주세요.','error'); return; }
+  var idx=customers.findIndex(function(c){ return c.id===id; });
+  if (idx>-1) { customers[idx].orderer=orderer; customers[idx].name=name||orderer; customers[idx].phone=phone; customers[idx].address=address; }
+  saveCustomers(customers);
+  postToSheet({action:'updateCustomer',orderer:orderer,name:name||orderer,phone:phone,address:address})
+    .then(function(){ showToast('고객 정보가 수정되었습니다.'); }).catch(function(){ showToast('시트 저장 실패.','error'); });
+  editingCustomerId=null; renderCustomers('');
+}
+function deleteCustomer(id, name) {
+  if (!confirm(name+' 고객을 삭제할까요?')) return;
+  var c=customers.find(function(x){ return x.id===id; });
+  customers=customers.filter(function(x){ return x.id!==id; }); saveCustomers(customers);
+  if (c) postToSheet({action:'deleteCustomer',phone:c.phone});
+  showToast('삭제되었습니다.'); renderCustomers('');
+}
+
+// ════════════════════════════════════════
+// 🌿 제품 관리
+// ════════════════════════════════════════
+function renderProducts() {
+  var html=
+    '<div class="page-header"><h2 class="page-title">제품 관리</h2><span class="badge">'+products.length+'개</span></div>'+
+    '<div class="card">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'+
+        '<div class="card-title" style="margin-bottom:0">🌿 등록된 제품</div>'+
+        '<button class="btn-add" onclick="startAddProduct()">+ 제품 추가</button>'+
+      '</div>';
+
+  // 새 제품 추가 폼
+  if (addingProduct) {
+    html+=
+      '<div style="background:var(--green-light);border-radius:12px;padding:14px;margin-bottom:14px">'+
+        '<div class="grid-2" style="margin-bottom:10px">'+
+          '<div><label class="field-label">제품명</label><input id="np-name" class="text-input" placeholder="예) 특대, 소, 선물세트"></div>'+
+          '<div><label class="field-label">가격 (원)</label><input id="np-price" class="text-input" type="number" min="0" placeholder="예) 15000"></div>'+
+        '</div>'+
+        '<div style="display:flex;gap:7px;justify-content:flex-end">'+
+          '<button class="btn-gray-sm" onclick="cancelAddProduct()">취소</button>'+
+          '<button class="btn-save" onclick="confirmAddProduct()">추가</button>'+
+        '</div>'+
+      '</div>';
+  }
+
+  if (!products.length && !addingProduct) {
+    html+='<div class="empty" style="padding:30px 0"><div class="empty-icon">🌿</div><div>등록된 제품이 없습니다</div></div>';
+  } else if (products.length) {
+    html+='<div style="border-top:1.5px solid var(--row)">';
+    for (var i=0;i<products.length;i++) {
+      var p=products[i];
+      if (editingProductIdx===i) {
+        html+=
+          '<div style="background:var(--row);border-radius:10px;padding:12px;margin:10px 0">'+
+            '<div class="grid-2" style="margin-bottom:10px">'+
+              '<div><label class="field-label">제품명</label><input id="ep-name" class="text-input" value="'+esc(p.name)+'"></div>'+
+              '<div><label class="field-label">가격 (원)</label><input id="ep-price" class="text-input" type="number" min="0" value="'+(p.price||0)+'"></div>'+
+            '</div>'+
+            '<div style="display:flex;gap:7px;justify-content:flex-end">'+
+              '<button class="btn-gray-sm" onclick="cancelEditProduct()">취소</button>'+
+              '<button class="btn-save" onclick="confirmEditProduct('+i+')">저장</button>'+
+            '</div>'+
+          '</div>';
+      } else {
+        html+=
+          '<div class="prod-row">'+
+            '<div class="prod-name">'+esc(p.name)+'</div>'+
+            '<div class="prod-price">'+(p.price?Number(p.price).toLocaleString()+'원':'<span style="color:var(--tag)">미설정</span>')+'</div>'+
+            '<button class="btn-gray-sm" onclick="startEditProduct('+i+')">수정</button>'+
+            '<button class="remove-btn" onclick="deleteProduct('+i+')">×</button>'+
+          '</div>';
+      }
+    }
+    html+='</div>';
+  }
+  html+='</div>';
+
+  // 안내
+  html+=
+    '<div class="card" style="background:#f9f6f0">'+
+      '<div style="font-size:13px;font-weight:600;color:var(--green);margin-bottom:8px">💡 사용 방법</div>'+
+      '<div style="font-size:13px;color:var(--muted);line-height:1.8">'+
+        '• 제품을 추가하면 주문등록 화면의 품목 선택에 바로 반영됩니다<br>'+
+        '• 가격을 입력해두면 품목 선택 시 <b>단가가 자동으로 채워집니다</b><br>'+
+        '• 가격은 나중에 언제든 수정할 수 있습니다<br>'+
+        '• 제품을 삭제해도 기존 주문 내역은 유지됩니다'+
+      '</div>'+
+    '</div>';
+
+  document.getElementById('view-products').innerHTML=html;
+}
+
+function startAddProduct() {
+  addingProduct=true; editingProductIdx=-1; renderProducts();
+  setTimeout(function(){ var el=document.getElementById('np-name'); if(el) el.focus(); },60);
+}
+function cancelAddProduct() { addingProduct=false; renderProducts(); }
+function confirmAddProduct() {
+  var name=(document.getElementById('np-name').value||'').trim();
+  var price=parseInt(document.getElementById('np-price').value)||0;
+  if (!name) { showToast('제품명을 입력해주세요.','error'); return; }
+  if (products.find(function(p){ return p.name===name; })) { showToast('이미 등록된 제품명입니다.','error'); return; }
+  products.push({name:name,price:price}); saveProductsLocal(products);
+  addingProduct=false; showToast(name+' 제품이 추가되었습니다! 🌿'); renderProducts();
+}
+
+function startEditProduct(i) {
+  editingProductIdx=i; addingProduct=false; renderProducts();
+  setTimeout(function(){ var el=document.getElementById('ep-name'); if(el) el.focus(); },60);
+}
+function cancelEditProduct() { editingProductIdx=-1; renderProducts(); }
+function confirmEditProduct(i) {
+  var name=(document.getElementById('ep-name').value||'').trim();
+  var price=parseInt(document.getElementById('ep-price').value)||0;
+  if (!name) { showToast('제품명을 입력해주세요.','error'); return; }
+  products[i]={name:name,price:price}; saveProductsLocal(products);
+  editingProductIdx=-1; showToast('제품 정보가 수정되었습니다.'); renderProducts();
+}
+function deleteProduct(i) {
+  if (!confirm(products[i].name+' 제품을 삭제할까요?')) return;
+  products.splice(i,1); saveProductsLocal(products);
+  showToast('삭제되었습니다.'); renderProducts();
+}
+
+// ── 초기화 ──
+loadFromSheet();
+</script>
+</body>
+</html>
