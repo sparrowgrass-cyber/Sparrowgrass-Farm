@@ -75,15 +75,10 @@
   .order-memo { font-size: 14px; color: var(--muted); margin-bottom: 9px; }
   .order-actions { display: flex; gap: 7px; justify-content: flex-end; }
 
-  .cust-card { background: var(--card); border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(124,184,122,0.08); border: 1px solid var(--border); }
-  .cust-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 11px; }
-  .cust-name { font-weight: 700; font-size: 17px; }
-  .cust-info { font-size: 15px; color: var(--brown); margin-top: 3px; }
-  .cust-addr { font-size: 14px; color: var(--muted); margin-top: 2px; }
-  .cust-stat-val { font-weight: 700; color: var(--orange); font-size: 16px; text-align: right; }
-  .cust-stat-cnt { font-size: 14px; color: var(--tag); }
-  .cust-reg { font-size: 13px; color: var(--border); margin-top: 2px; }
-  .cust-actions { display: flex; gap: 7px; justify-content: flex-end; }
+  .cust-card { background: var(--card); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; box-shadow: 0 1px 4px rgba(124,184,122,0.08); border: 1px solid var(--border); }
+  .cust-name { font-weight: 700; font-size: 15px; }
+  .cust-stat-val { font-weight: 700; color: var(--orange); font-size: 14px; }
+  .cust-stat-cnt { font-size: 12px; color: var(--tag); }
 
   .prod-row { display: grid; grid-template-columns: 1fr 120px 50px 34px; gap: 8px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--row); }
   .prod-row:last-child { border-bottom: none; }
@@ -298,7 +293,7 @@ function switchView(v) {
     if (btn) btn.classList.toggle('active', id===v);
   });
   if (v==='newOrder')  renderOrderForm();
-  if (v==='history')   renderHistory('');
+  if (v==='history')   { historySearch=''; renderHistory(); }
   if (v==='customers') renderCustomers('');
   if (v==='products')  renderProducts();
 }
@@ -547,21 +542,38 @@ function submitOrder() {
 // ════════════════════════════════════════
 // 📦 주문 내역
 // ════════════════════════════════════════
+var historySearch = '';
+
 function renderHistory(search) {
+  if (search !== undefined) historySearch = search;
   var filtered=orders.filter(function(o){
-    return !search||(o.orderer||'').includes(search)||(o.name||'').includes(search)||(o.phone||'').includes(search)||(o.address||'').includes(search);
+    var s = historySearch;
+    return !s||(o.orderer||'').includes(s)||(o.name||'').includes(s)||(o.phone||'').includes(s)||(o.address||'').includes(s);
   }).sort(function(a,b){
     if (b.date && a.date && b.date !== a.date) return b.date.localeCompare(a.date);
     return b.id - a.id;
   });
 
-  var html='<div class="page-header"><h2 class="page-title">주문 내역</h2><span class="badge">총 '+orders.length+'건</span></div>'+
-    '<div class="search-wrap"><input class="text-input" value="'+esc(search)+'" placeholder="🔍 이름, 전화번호, 주소 검색" oninput="renderHistory(this.value)"></div>';
+  // 검색창은 처음 한 번만 그리고, 이후엔 결과만 갱신
+  var con = document.getElementById('view-history');
+  var existingSearch = document.getElementById('history-search-input');
+  if (!existingSearch) {
+    con.innerHTML =
+      '<div class="page-header"><h2 class="page-title">주문 내역</h2><span class="badge" id="history-badge">총 '+orders.length+'건</span></div>'+
+      '<div class="search-wrap"><input id="history-search-input" class="text-input" value="" placeholder="🔍 이름, 전화번호, 주소 검색" oninput="renderHistory(this.value)"></div>'+
+      '<div id="history-results"></div>';
+  } else {
+    var badge = document.getElementById('history-badge');
+    if (badge) badge.textContent = '총 '+orders.length+'건';
+  }
 
-  if (!filtered.length) { html+='<div class="empty"><div class="empty-icon">📦</div><div>주문 내역이 없습니다</div></div>'; }
-  else {
+  var html='';
+  if (!filtered.length) {
+    html='<div class="empty"><div class="empty-icon">📦</div><div>'+(historySearch?'검색 결과가 없습니다':'주문 내역이 없습니다')+'</div></div>';
+  } else {
     for (var i=0;i<filtered.length;i++) {
       var o=filtered[i];
+      var oid = String(o.id);
       var ihtml='';
       for (var j=0;j<(o.items||[]).length;j++) {
         var it=o.items[j];
@@ -571,34 +583,35 @@ function renderHistory(search) {
       html+='<div class="order-card">'+
         '<div class="order-top">'+
           '<div>'+
-            '<div class="order-name">🧑 '+esc(o.orderer||o.name)+'</div>'+
+            '<div class="order-name">'+esc(o.orderer||o.name)+'</div>'+
             (o.name&&o.name!==(o.orderer||o.name)?'<div style="font-size:13px;color:var(--green);margin-top:2px">📦 받는분: '+esc(o.name)+'</div>':'')+
             (o.phone?'<div class="order-phone">📞 '+esc(o.phone)+'</div>':'')+
-            (o.address?'<div class="order-addr">📍 '+esc(o.address)+'</div>':'')+
+            (o.address?'<div class="order-addr">'+esc(o.address)+'</div>':'')+
           '</div>'+
           '<div><div class="order-amount">'+(o.total||0).toLocaleString()+'원</div><div class="order-date">'+(o.date||'')+'</div></div>'+
         '</div>'+
         '<div class="order-items">'+ihtml+'</div>'+
         (o.memo?'<div class="order-memo">📝 '+esc(o.memo)+'</div>':'')+
         '<div class="order-actions">'+
-          '<button class="btn-gray-sm" onclick="startEditOrder('+o.id+')">수정</button>'+
-          '<button class="btn-red-sm" onclick="deleteOrder('+o.id+')">삭제</button>'+
+          '<button class="btn-gray-sm" onclick="startEditOrder(\''+oid+'\')">수정</button>'+
+          '<button class="btn-red-sm" onclick="deleteOrder(\''+oid+'\')">삭제</button>'+
         '</div>'+
       '</div>';
     }
   }
-  document.getElementById('view-history').innerHTML=html;
+  var results = document.getElementById('history-results');
+  if (results) results.innerHTML = html;
 }
 
 function deleteOrder(id) {
   if (!confirm('이 주문을 삭제할까요?')) return;
-  orders=orders.filter(function(o){ return o.id!==id; }); saveOrders(orders);
+  orders=orders.filter(function(o){ return String(o.id)!==String(id); }); saveOrders(orders);
   postToSheet({action:'deleteOrder',id:id}).then(function(){ showToast('삭제되었습니다.'); }).catch(function(){ showToast('시트 삭제 실패.','error'); });
-  renderHistory('');
+  renderHistory();
 }
 function startEditOrder(id) {
-  var o=orders.find(function(x){ return x.id===id; }); if(!o) return;
-  editOrderId=id;
+  var o=orders.find(function(x){ return String(x.id)===String(id); }); if(!o) return;
+  editOrderId=o.id;
   orderForm={ orderer:o.orderer||'', name:o.name||'', phone:o.phone||'', address:o.address||'', memo:o.memo||'', date:o.date||today(), items:JSON.parse(JSON.stringify(o.items||[{product:'',qty:1,price:''}])) };
   switchView('newOrder');
 }
@@ -643,21 +656,20 @@ function renderCustomers(search) {
         '</div>';
       } else {
         html+='<div class="cust-card">'+
-          '<div class="cust-top">'+
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+
             '<div>'+
-              '<div class="cust-name">🧑 '+esc(c.orderer||c.name)+'</div>'+
-              (c.name&&c.name!==(c.orderer||c.name)?'<div style="font-size:13px;color:var(--green);margin-top:2px">📦 받는분: '+esc(c.name)+'</div>':'')+
-              '<div class="cust-info">📞 '+esc(c.phone)+'</div>'+
-              (c.address?'<div class="cust-addr">📍 '+esc(c.address)+'</div>':'')+
+              '<span class="cust-name">'+esc(c.orderer||c.name)+'</span>'+
+              (c.name&&c.name!==(c.orderer||c.name)?'<span style="font-size:12px;color:var(--green);margin-left:8px">→ '+esc(c.name)+'</span>':'')+
             '</div>'+
-            '<div>'+
+            '<div style="text-align:right">'+
               '<div class="cust-stat-val">'+tot.toLocaleString()+'원</div>'+
-              '<div class="cust-stat-cnt">총 '+cnt+'회 주문</div>'+
-              '<div class="cust-reg">가입 '+(c.createdAt||'')+'</div>'+
+              '<div class="cust-stat-cnt">'+cnt+'회</div>'+
             '</div>'+
           '</div>'+
-          '<div class="cust-actions">'+
-            '<button class="btn-green-sm" onclick="quickOrder(\''+esc(c.phone)+'\')">+ 주문등록</button>'+
+          '<div style="font-size:13px;color:var(--brown);margin-bottom:2px">📞 '+esc(c.phone)+'</div>'+
+          (c.address?'<div style="font-size:12px;color:var(--muted);margin-bottom:6px">'+esc(c.address)+'</div>':'<div style="margin-bottom:6px"></div>')+
+          '<div style="display:flex;gap:6px;justify-content:flex-end">'+
+            '<button class="btn-green-sm" onclick="quickOrder(\''+esc(c.phone)+'\')">+ 주문</button>'+
             '<button class="btn-gray-sm" onclick="startEditCustomer('+c.id+')">수정</button>'+
             '<button class="btn-red-sm" onclick="deleteCustomer('+c.id+',\''+esc(c.orderer||c.name)+'\')">삭제</button>'+
           '</div>'+
