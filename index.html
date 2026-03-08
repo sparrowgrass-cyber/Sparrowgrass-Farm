@@ -122,15 +122,17 @@
     <div style="font-size:48px;margin-bottom:12px">🍅</div>
     <div style="font-size:20px;font-weight:700;color:#2d3a2e;margin-bottom:4px">참새풀농원</div>
     <div style="font-size:13px;color:#9aaa96;margin-bottom:24px">직거래 고객관리</div>
-    <div style="display:flex;justify-content:center;gap:12px;margin-bottom:14px">
-      <div id="dot0" style="width:16px;height:16px;border-radius:50%;background:#d6e8d2;transition:background 0.2s"></div>
-      <div id="dot1" style="width:16px;height:16px;border-radius:50%;background:#d6e8d2;transition:background 0.2s"></div>
-      <div id="dot2" style="width:16px;height:16px;border-radius:50%;background:#d6e8d2;transition:background 0.2s"></div>
+    <div style="display:flex;justify-content:center;gap:12px;margin-bottom:20px">
+      <input class="pw-box" id="pb0" type="password" maxlength="1" inputmode="numeric"
+        style="width:52px;height:52px;border:2px solid #d6e8d2;border-radius:12px;font-size:24px;text-align:center;outline:none;font-family:inherit;background:#fafafa"
+        oninput="onPwBox(0)" onkeydown="onPwBoxKey(event,0)">
+      <input class="pw-box" id="pb1" type="password" maxlength="1" inputmode="numeric"
+        style="width:52px;height:52px;border:2px solid #d6e8d2;border-radius:12px;font-size:24px;text-align:center;outline:none;font-family:inherit;background:#fafafa"
+        oninput="onPwBox(1)" onkeydown="onPwBoxKey(event,1)">
+      <input class="pw-box" id="pb2" type="password" maxlength="1" inputmode="numeric"
+        style="width:52px;height:52px;border:2px solid #d6e8d2;border-radius:12px;font-size:24px;text-align:center;outline:none;font-family:inherit;background:#fafafa"
+        oninput="onPwBox(2)" onkeydown="onPwBoxKey(event,2)">
     </div>
-    <input id="pw-input" type="password" placeholder="숫자 3자리 입력" maxlength="3"
-      style="width:100%;padding:12px 16px;border:1.5px solid #d6e8d2;border-radius:12px;font-size:18px;text-align:center;outline:none;letter-spacing:8px;margin-bottom:8px;font-family:inherit"
-      oninput="onPwInput(this.value)"
-      onkeydown="pwKeydown(event)">
     <div id="pw-error" style="display:none;color:#e07070;font-size:13px;margin-bottom:8px">비밀번호가 틀렸습니다</div>
     <button onclick="submitPassword()"
       style="width:100%;padding:13px;background:linear-gradient(135deg,#ffaa44,#ffcc77);color:white;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin-top:4px">
@@ -307,7 +309,7 @@ function switchView(v) {
   });
   if (v==='newOrder')  renderOrderForm();
   if (v==='history')   { historySearch=''; renderHistory(); }
-  if (v==='customers') renderCustomers('');
+  if (v==='customers') { customerSearch=''; renderCustomers(); }
   if (v==='products')  renderProducts();
 }
 
@@ -632,16 +634,33 @@ function startEditOrder(id) {
 // ════════════════════════════════════════
 // 👥 고객 목록
 // ════════════════════════════════════════
+var customerSearch = '';
+
 function renderCustomers(search) {
-  var filtered=customers.filter(function(c){
-    return !search||(c.orderer||'').includes(search)||(c.name||'').includes(search)||(c.phone||'').includes(search)||(c.address||'').includes(search);
-  }).sort(function(a,b){ return b.id-a.id; });
+  if (search !== undefined) customerSearch = search;
+  var filtered = customers.filter(function(c){
+    var s = customerSearch;
+    return !s||(c.orderer||'').includes(s)||(c.name||'').includes(s)||(c.phone||'').includes(s)||(c.address||'').includes(s);
+  }).sort(function(a,b){
+    return (a.orderer||a.name||'').localeCompare(b.orderer||b.name||'', 'ko');
+  });
 
-  var html='<div class="page-header"><h2 class="page-title">고객 목록</h2><span class="badge">'+customers.length+'명</span></div>'+
-    '<div class="search-wrap"><input class="text-input" value="'+esc(search)+'" placeholder="🔍 이름, 전화번호, 주소 검색" oninput="renderCustomers(this.value)"></div>';
+  var con = document.getElementById('view-customers');
+  var existingSearch = document.getElementById('customer-search-input');
+  if (!existingSearch) {
+    con.innerHTML =
+      '<div class="page-header"><h2 class="page-title">고객 목록</h2><span class="badge" id="customer-badge">'+customers.length+'명</span></div>'+
+      '<div class="search-wrap"><input id="customer-search-input" class="text-input" value="" placeholder="🔍 이름, 전화번호, 주소 검색" oninput="renderCustomers(this.value)"></div>'+
+      '<div id="customer-results"></div>';
+  } else {
+    var badge = document.getElementById('customer-badge');
+    if (badge) badge.textContent = customers.length+'명';
+  }
 
-  if (!filtered.length) { html+='<div class="empty"><div class="empty-icon">👥</div><div>등록된 고객이 없습니다</div></div>'; }
-  else {
+  var html='';
+  if (!filtered.length) {
+    html='<div class="empty"><div class="empty-icon">👥</div><div>'+(customerSearch?'검색 결과가 없습니다':'등록된 고객이 없습니다')+'</div></div>';
+  } else {
     for (var i=0;i<filtered.length;i++) {
       var c=filtered[i];
       var cnt=orders.filter(function(o){ return o.phone===c.phone; }).length;
@@ -690,7 +709,8 @@ function renderCustomers(search) {
       }
     }
   }
-  document.getElementById('view-customers').innerHTML=html;
+  var results = document.getElementById('customer-results');
+  if (results) results.innerHTML = html;
 }
 
 function quickOrder(phone) {
@@ -698,8 +718,8 @@ function quickOrder(phone) {
   orderForm=emptyForm(); orderForm.orderer=c.orderer||c.name; orderForm.name=c.name; orderForm.phone=c.phone; orderForm.address=c.address||'';
   switchView('newOrder');
 }
-function startEditCustomer(id)  { editingCustomerId=id;   renderCustomers(''); }
-function cancelEditCustomer()   { editingCustomerId=null; renderCustomers(''); }
+function startEditCustomer(id)  { editingCustomerId=id;   renderCustomers(); }
+function cancelEditCustomer()   { editingCustomerId=null; renderCustomers(); }
 function saveEditCustomer(id) {
   var orderer=document.getElementById('ec-orderer').value.trim();
   var name=document.getElementById('ec-name').value.trim();
@@ -711,14 +731,14 @@ function saveEditCustomer(id) {
   saveCustomers(customers);
   postToSheet({action:'updateCustomer',orderer:orderer,name:name||orderer,phone:phone,address:address})
     .then(function(){ showToast('고객 정보가 수정되었습니다.'); }).catch(function(){ showToast('시트 저장 실패.','error'); });
-  editingCustomerId=null; renderCustomers('');
+  editingCustomerId=null; renderCustomers();
 }
 function deleteCustomer(id, name) {
   if (!confirm(name+' 고객을 삭제할까요?')) return;
   var c=customers.find(function(x){ return x.id===id; });
   customers=customers.filter(function(x){ return x.id!==id; }); saveCustomers(customers);
   if (c) postToSheet({action:'deleteCustomer',phone:c.phone});
-  showToast('삭제되었습니다.'); renderCustomers('');
+  showToast('삭제되었습니다.'); renderCustomers();
 }
 
 // ════════════════════════════════════════
@@ -839,6 +859,7 @@ function checkPassword() {
     }
   }
   document.getElementById('pw-screen').style.display='flex';
+  setTimeout(function(){ document.getElementById('pb0').focus(); }, 100);
 }
 function submitPassword() {
   var val = document.getElementById('pw-input').value;
@@ -852,14 +873,42 @@ function submitPassword() {
     document.getElementById('pw-input').focus();
   }
 }
-function onPwInput(val) {
+function onPwBox(i) {
+  var box = document.getElementById('pb'+i);
+  var val = box.value;
+  // 숫자만 허용
+  box.value = val.replace(/\D/g,'').slice(0,1);
+  // 포커스 이동
+  if (box.value && i < 2) document.getElementById('pb'+(i+1)).focus();
+  // 테두리 색 변경
+  box.style.borderColor = box.value ? '#ffaa44' : '#d6e8d2';
   document.getElementById('pw-error').style.display='none';
-  for (var i=0; i<3; i++) {
-    var dot = document.getElementById('dot'+i);
-    if (dot) dot.style.background = i < val.length ? '#ffaa44' : '#d6e8d2';
+  // 세 칸 다 찼으면 자동 제출
+  var all = [document.getElementById('pb0').value, document.getElementById('pb1').value, document.getElementById('pb2').value];
+  if (all[0] && all[1] && all[2]) submitPassword();
+}
+function onPwBoxKey(e, i) {
+  if (e.key==='Backspace' && !document.getElementById('pb'+i).value && i > 0) {
+    var prev = document.getElementById('pb'+(i-1));
+    prev.value=''; prev.style.borderColor='#d6e8d2'; prev.focus();
+  }
+  if (e.key==='Enter') submitPassword();
+}
+function submitPassword() {
+  var val = (document.getElementById('pb0').value||'')+(document.getElementById('pb1').value||'')+(document.getElementById('pb2').value||'');
+  if (val === PASSWORD) {
+    localStorage.setItem('farm_auth_time', Date.now().toString());
+    document.getElementById('pw-screen').style.display='none';
+    loadFromSheet();
+  } else {
+    document.getElementById('pw-error').style.display='block';
+    ['pb0','pb1','pb2'].forEach(function(id){
+      var b=document.getElementById(id); b.value=''; b.style.borderColor='#e07070';
+    });
+    document.getElementById('pb0').focus();
   }
 }
-function pwKeydown(e) { if (e.key==='Enter') submitPassword(); }
+function pwKeydown(e) {}
 
 // ── 초기화 ──
 checkPassword();
