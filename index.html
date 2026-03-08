@@ -3,83 +3,83 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🌾 참새풀농원 고객관리</title>
+<title>참새풀농원 고객관리</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #f5f2eb; --card: #ffffff; --dark: #2c2416;
-    --green: #3d6b2f; --green-light: #e8f5e1;
-    --brown: #6b5c44; --muted: #8a7560;
-    --border: #d4cbbf; --tag: #b8a88a; --row: #f0ece4;
+    --bg: #f7f9f4; --card: #ffffff; --dark: #2d3a2e;
+    --green: #7cb87a; --green-light: #e8f5e4;
+    --orange: #f0956a; --orange-light: #fef0e8;
+    --brown: #7a6a5a; --muted: #9aaa96;
+    --border: #d6e8d2; --tag: #b5cdb1; --row: #eef5ec;
   }
   body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--dark); min-height: 100vh; }
   input, select, textarea, button { font-family: inherit; }
   button { cursor: pointer; border: none; background: none; }
 
-  header { background: var(--dark); padding: 0 16px; }
+  header { background: linear-gradient(135deg, #7cb87a 0%, #a8d5a2 100%); padding: 0 16px; box-shadow: 0 2px 12px rgba(124,184,122,0.25); }
   .header-inner { max-width: 720px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 16px 0 12px; flex-wrap: wrap; gap: 10px; }
   .logo { display: flex; align-items: center; gap: 10px; }
-  .logo-icon { font-size: 24px; }
-  .logo-title { color: var(--bg); font-weight: 700; font-size: 16px; }
-  .logo-sub { color: var(--muted); font-size: 11px; margin-top: 1px; }
-  .nav { display: flex; gap: 3px; background: #3d3020; border-radius: 30px; padding: 4px; }
-  .nav-btn { padding: 7px 13px; border-radius: 24px; font-size: 12px; font-weight: 500; color: var(--muted); transition: all 0.2s; }
-  .nav-btn.active { background: var(--green); color: white; }
-  .nav-btn:hover:not(.active) { background: #4a3c28; color: var(--bg); }
+  .logo-title { color: #fff; font-weight: 700; font-size: 17px; letter-spacing: -0.3px; text-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .logo-sub { color: rgba(255,255,255,0.8); font-size: 11px; margin-top: 1px; }
+  .nav { display: flex; gap: 3px; background: rgba(255,255,255,0.25); border-radius: 30px; padding: 4px; backdrop-filter: blur(4px); }
+  .nav-btn { padding: 7px 13px; border-radius: 24px; font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.85); transition: all 0.2s; }
+  .nav-btn.active { background: white; color: var(--green); font-weight: 700; }
+  .nav-btn:hover:not(.active) { background: rgba(255,255,255,0.2); color: white; }
 
   main { max-width: 720px; margin: 0 auto; padding: 24px 14px 80px; }
 
-  .card { background: var(--card); border-radius: 16px; padding: 20px; margin-bottom: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+  .card { background: var(--card); border-radius: 18px; padding: 20px; margin-bottom: 14px; box-shadow: 0 2px 12px rgba(124,184,122,0.1); border: 1px solid var(--border); }
   .card-title { font-size: 13px; font-weight: 600; color: var(--green); display: flex; align-items: center; gap: 6px; margin-bottom: 16px; }
 
   .field-label { display: block; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 5px; }
-  .text-input { width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px; background: white; color: var(--dark); transition: border 0.2s; }
-  .text-input:focus { outline: none; border-color: var(--green); }
+  .text-input { width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px; background: #fafcf9; color: var(--dark); transition: border 0.2s; }
+  .text-input:focus { outline: none; border-color: var(--green); background: white; }
   select.text-input { cursor: pointer; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-  .autocomplete { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: white; border: 1.5px solid var(--border); border-radius: 12px; z-index: 200; box-shadow: 0 6px 20px rgba(0,0,0,0.12); overflow: hidden; display: none; }
+  .autocomplete { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: white; border: 1.5px solid var(--border); border-radius: 12px; z-index: 200; box-shadow: 0 6px 20px rgba(124,184,122,0.15); overflow: hidden; display: none; }
   .autocomplete.show { display: block; }
   .ac-item { padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--row); display: flex; justify-content: space-between; align-items: center; transition: background 0.1s; }
   .ac-item:last-child { border-bottom: none; }
-  .ac-item:hover { background: var(--bg); }
+  .ac-item:hover { background: var(--green-light); }
   .ac-name { font-weight: 600; font-size: 14px; }
   .ac-phone { font-size: 12px; color: var(--muted); margin-top: 1px; }
   .ac-count { font-size: 11px; color: var(--tag); }
 
   .items-header { display: grid; grid-template-columns: 2fr 55px 95px 30px; gap: 7px; margin-bottom: 5px; }
   .item-row { display: grid; grid-template-columns: 2fr 55px 95px 30px; gap: 7px; margin-bottom: 7px; align-items: center; }
-  .remove-btn { width: 28px; height: 28px; background: #fde8e8; color: #c0392b; border-radius: 7px; font-size: 17px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .remove-btn { width: 28px; height: 28px; background: #fde8e8; color: #e07070; border-radius: 7px; font-size: 17px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .total-row { border-top: 1.5px solid var(--row); margin-top: 10px; padding-top: 12px; display: flex; justify-content: space-between; align-items: center; }
-  .total-amount { font-weight: 700; font-size: 20px; color: var(--dark); }
+  .total-amount { font-weight: 700; font-size: 20px; color: var(--orange); }
 
-  .btn-primary { width: 100%; background: var(--green); color: white; padding: 15px; border-radius: 14px; font-size: 16px; font-weight: 700; box-shadow: 0 4px 16px rgba(61,107,47,0.28); transition: transform 0.1s, box-shadow 0.1s; }
-  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(61,107,47,0.38); }
-  .btn-add { background: var(--green-light); color: var(--green); padding: 6px 13px; border-radius: 20px; font-size: 13px; font-weight: 600; }
-  .btn-green-sm { background: var(--green-light); color: var(--green); padding: 6px 13px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+  .btn-primary { width: 100%; background: linear-gradient(135deg, #f0956a, #f5b48a); color: white; padding: 15px; border-radius: 14px; font-size: 16px; font-weight: 700; box-shadow: 0 4px 16px rgba(240,149,106,0.35); transition: transform 0.1s, box-shadow 0.1s; }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(240,149,106,0.45); }
+  .btn-add { background: var(--orange-light); color: var(--orange); padding: 6px 13px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+  .btn-green-sm { background: var(--green-light); color: #5a9e58; padding: 6px 13px; border-radius: 20px; font-size: 13px; font-weight: 600; }
   .btn-gray-sm { background: var(--row); color: var(--brown); padding: 6px 13px; border-radius: 20px; font-size: 13px; font-weight: 500; }
-  .btn-red-sm { background: #fde8e8; color: #c0392b; padding: 6px 13px; border-radius: 20px; font-size: 13px; font-weight: 500; }
-  .btn-save { background: var(--green); color: white; padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+  .btn-red-sm { background: #fde8e8; color: #e07070; padding: 6px 13px; border-radius: 20px; font-size: 13px; font-weight: 500; }
+  .btn-save { background: linear-gradient(135deg, #7cb87a, #9ecf9c); color: white; padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; }
 
-  .order-card { background: var(--card); border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 4px solid var(--green); }
+  .order-card { background: var(--card); border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(124,184,122,0.08); border-left: 4px solid var(--orange); border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
   .order-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
   .order-name { font-weight: 700; font-size: 15px; }
   .order-phone { font-size: 13px; color: var(--muted); margin-top: 2px; }
   .order-addr { font-size: 12px; color: var(--tag); margin-top: 2px; }
-  .order-amount { font-weight: 700; color: var(--green); font-size: 15px; text-align: right; }
+  .order-amount { font-weight: 700; color: var(--orange); font-size: 15px; text-align: right; }
   .order-date { font-size: 12px; color: var(--tag); }
   .order-items { background: var(--bg); border-radius: 10px; padding: 9px 11px; margin-bottom: 9px; }
   .order-item-row { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; }
   .order-memo { font-size: 12px; color: var(--muted); margin-bottom: 9px; }
   .order-actions { display: flex; gap: 7px; justify-content: flex-end; }
 
-  .cust-card { background: var(--card); border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+  .cust-card { background: var(--card); border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(124,184,122,0.08); border: 1px solid var(--border); }
   .cust-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 11px; }
   .cust-name { font-weight: 700; font-size: 15px; }
   .cust-info { font-size: 13px; color: var(--brown); margin-top: 3px; }
   .cust-addr { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .cust-stat-val { font-weight: 700; color: var(--green); font-size: 14px; text-align: right; }
+  .cust-stat-val { font-weight: 700; color: var(--orange); font-size: 14px; text-align: right; }
   .cust-stat-cnt { font-size: 12px; color: var(--tag); }
   .cust-reg { font-size: 11px; color: var(--border); margin-top: 2px; }
   .cust-actions { display: flex; gap: 7px; justify-content: flex-end; }
@@ -87,20 +87,26 @@
   .prod-row { display: grid; grid-template-columns: 1fr 120px 50px 34px; gap: 8px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--row); }
   .prod-row:last-child { border-bottom: none; }
   .prod-name { font-weight: 600; font-size: 14px; }
-  .prod-price { font-size: 14px; color: var(--green); font-weight: 600; }
+  .prod-price { font-size: 14px; color: var(--orange); font-weight: 600; }
 
-  #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-10px); background: var(--green); color: white; padding: 11px 24px; border-radius: 30px; font-size: 14px; font-weight: 500; box-shadow: 0 4px 20px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s; z-index: 1000; pointer-events: none; white-space: nowrap; }
+  /* 전화번호 010 prefix */
+  .phone-wrap { display: flex; align-items: center; gap: 0; }
+  .phone-prefix { background: var(--row); border: 1.5px solid var(--border); border-right: none; border-radius: 10px 0 0 10px; padding: 10px 10px; font-size: 14px; font-weight: 600; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+  .phone-wrap .text-input { border-radius: 0 10px 10px 0; }
+  .phone-wrap .text-input:focus { border-color: var(--green); }
+
+  #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-10px); background: var(--green); color: white; padding: 11px 24px; border-radius: 30px; font-size: 14px; font-weight: 500; box-shadow: 0 4px 20px rgba(124,184,122,0.35); opacity: 0; transition: all 0.3s; z-index: 1000; pointer-events: none; white-space: nowrap; }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-  #toast.error { background: #c0392b; }
+  #toast.error { background: #e07070; }
 
-  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; background: var(--green-light); color: var(--green); }
-  .badge.new { margin-left: 8px; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; background: var(--orange-light); color: var(--orange); }
+  .badge.new { margin-left: 8px; background: var(--green-light); color: #5a9e58; }
   .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
-  .page-title { font-size: 19px; font-weight: 700; }
+  .page-title { font-size: 19px; font-weight: 700; color: var(--dark); }
   .search-wrap { margin-bottom: 14px; }
   .empty { text-align: center; padding: 50px 0; color: var(--tag); }
   .empty-icon { font-size: 40px; margin-bottom: 10px; }
-  .hint-box { font-size: 12px; color: var(--muted); padding: 8px 12px; background: var(--row); border-radius: 8px; }
+  .hint-box { font-size: 12px; color: var(--muted); padding: 8px 12px; background: var(--orange-light); border-radius: 8px; border-left: 3px solid var(--orange); }
 
   @media (max-width: 500px) {
     .nav-btn { padding: 6px 9px; font-size: 11px; }
@@ -115,7 +121,6 @@
 <header>
   <div class="header-inner">
     <div class="logo">
-      <div class="logo-icon">🌾</div>
       <div>
         <div class="logo-title">참새풀농원</div>
         <div class="logo-sub">직거래 고객관리</div>
@@ -223,12 +228,32 @@ function getProductPrice(name) {
   return (p && p.price) ? p.price : '';
 }
 
-// ── Phone format ──
+// ── Phone format (010 자동 prefix, 나머지만 입력) ──
 function formatPhone(v) {
-  var d = v.replace(/\D/g,'').slice(0,11);
-  if (d.length<=3) return d;
-  if (d.length<=7) return d.slice(0,3)+'-'+d.slice(3);
-  return d.slice(0,3)+'-'+d.slice(3,7)+'-'+d.slice(7);
+  // 숫자만 추출, 010 앞자리 제거 후 나머지 포맷
+  var d = v.replace(/\D/g,'');
+  if (d.startsWith('010')) d = d.slice(3);
+  d = d.slice(0,8);
+  if (d.length <= 4) return d;
+  return d.slice(0,4)+'-'+d.slice(4);
+}
+function fullPhone(partial) {
+  // 저장/표시용 전체 번호 조합
+  if (!partial) return '';
+  var d = partial.replace(/\D/g,'');
+  if (d.startsWith('010')) return partial; // 이미 전체번호
+  d = d.slice(0,8);
+  if (d.length <= 4) return '010-'+d;
+  return '010-'+d.slice(0,4)+'-'+d.slice(4);
+}
+function partialPhone(full) {
+  // 전체번호 → 뒷자리만 추출 (입력창 표시용)
+  if (!full) return '';
+  var d = full.replace(/\D/g,'');
+  if (d.startsWith('010')) d = d.slice(3);
+  d = d.slice(0,8);
+  if (d.length <= 4) return d;
+  return d.slice(0,4)+'-'+d.slice(4);
 }
 
 function esc(s) {
@@ -280,7 +305,12 @@ function renderOrderForm() {
       '<div class="hint-box" style="margin-bottom:12px">📦 받는 분이 주문자와 다를 경우 아래에 입력하세요</div>'+
       '<div class="grid-2" style="margin-bottom:12px">'+
         '<div><label class="field-label">이름 (받는분)</label><input id="f-name" class="text-input" value="'+esc(orderForm.name)+'" placeholder="주문자와 동일하면 비워두세요" oninput="orderForm.name=this.value"></div>'+
-        '<div><label class="field-label">전화번호 (받는분)</label><input id="f-phone" class="text-input" value="'+esc(orderForm.phone)+'" placeholder="010-0000-0000" oninput="onPhoneInput(this.value)"></div>'+
+        '<div><label class="field-label">전화번호 (받는분)</label>'+
+          '<div class="phone-wrap">'+
+            '<span class="phone-prefix">010</span>'+
+            '<input id="f-phone" class="text-input" value="'+esc(partialPhone(orderForm.phone))+'" placeholder="0000-0000" oninput="onPhoneInput(this.value)">'+
+          '</div>'+
+        '</div>'+
       '</div>'+
       '<div style="margin-bottom:12px"><label class="field-label">배송 주소</label><input id="f-address" class="text-input" value="'+esc(orderForm.address)+'" placeholder="주소를 입력하세요" oninput="orderForm.address=this.value"></div>'+
       '<div class="grid-2">'+
@@ -387,8 +417,10 @@ function selectCustomer(phone) {
   renderOrderForm();
 }
 function onPhoneInput(val) {
-  var fmt=formatPhone(val); orderForm.phone=fmt;
-  var el=document.getElementById('f-phone'); if(el) el.value=fmt;
+  var fmt = formatPhone(val);
+  orderForm.phone = fullPhone(fmt);
+  var el = document.getElementById('f-phone');
+  if (el) el.value = fmt;
 }
 function cancelEdit() { editOrderId=null; orderForm=emptyForm(); renderOrderForm(); }
 
@@ -510,7 +542,12 @@ function renderCustomers(search) {
             '<div><label class="field-label">이름(받는분)</label><input id="ec-name" class="text-input" value="'+esc(c.name)+'"></div>'+
           '</div>'+
           '<div class="grid-2" style="margin-bottom:11px">'+
-            '<div><label class="field-label">전화번호(받는분)</label><input id="ec-phone" class="text-input" value="'+esc(c.phone)+'" oninput="this.value=formatPhone(this.value)"></div>'+
+            '<div><label class="field-label">전화번호(받는분)</label>'+
+              '<div class="phone-wrap">'+
+                '<span class="phone-prefix">010</span>'+
+                '<input id="ec-phone" class="text-input" value="'+esc(partialPhone(c.phone))+'" oninput="this.value=formatPhone(this.value)">'+
+              '</div>'+
+            '</div>'+
             '<div></div>'+
           '</div>'+
           '<div style="margin-bottom:12px"><label class="field-label">주소</label><input id="ec-address" class="text-input" value="'+esc(c.address||'')+'"></div>'+
@@ -556,7 +593,7 @@ function cancelEditCustomer()   { editingCustomerId=null; renderCustomers(''); }
 function saveEditCustomer(id) {
   var orderer=document.getElementById('ec-orderer').value.trim();
   var name=document.getElementById('ec-name').value.trim();
-  var phone=document.getElementById('ec-phone').value.trim();
+  var phone=fullPhone(document.getElementById('ec-phone').value.trim());
   var address=document.getElementById('ec-address').value.trim();
   if (!orderer) { showToast('주문자 이름을 입력해주세요.','error'); return; }
   var idx=customers.findIndex(function(c){ return c.id===id; });
