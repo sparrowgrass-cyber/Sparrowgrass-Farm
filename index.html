@@ -121,10 +121,35 @@
 </head>
 <body>
 
+<!-- 비밀번호 화면 -->
+<div id="pw-screen" style="display:none;position:fixed;inset:0;background:linear-gradient(135deg,#ffaa44,#ffcc77);z-index:9999;flex-direction:column;align-items:center;justify-content:center;gap:20px;">
+  <div style="background:white;border-radius:24px;padding:36px 32px;box-shadow:0 8px 32px rgba(0,0,0,0.15);text-align:center;width:300px;max-width:90vw;">
+    <div style="font-size:48px;margin-bottom:12px">🍅</div>
+    <div style="font-size:20px;font-weight:700;color:#2d3a2e;margin-bottom:4px">참새풀농원</div>
+    <div style="font-size:13px;color:#9aaa96;margin-bottom:24px">직거래 고객관리</div>
+    <div style="display:flex;justify-content:center;gap:12px;margin-bottom:14px">
+      <div id="dot0" style="width:16px;height:16px;border-radius:50%;background:#d6e8d2;transition:background 0.2s"></div>
+      <div id="dot1" style="width:16px;height:16px;border-radius:50%;background:#d6e8d2;transition:background 0.2s"></div>
+      <div id="dot2" style="width:16px;height:16px;border-radius:50%;background:#d6e8d2;transition:background 0.2s"></div>
+    </div>
+    <input id="pw-input" type="password" placeholder="숫자 3자리 입력" maxlength="3"
+      style="width:100%;padding:12px 16px;border:1.5px solid #d6e8d2;border-radius:12px;font-size:18px;text-align:center;outline:none;letter-spacing:8px;margin-bottom:8px;font-family:inherit"
+      oninput="onPwInput(this.value)"
+      onkeydown="pwKeydown(event)">
+    <div id="pw-error" style="display:none;color:#e07070;font-size:13px;margin-bottom:8px">비밀번호가 틀렸습니다</div>
+    <button onclick="submitPassword()"
+      style="width:100%;padding:13px;background:linear-gradient(135deg,#ffaa44,#ffcc77);color:white;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin-top:4px">
+      입장하기
+    </button>
+  </div>
+</div>
+
 <header>
   <div class="header-inner">
     <div class="logo">
       <div>
+        <img src="https://raw.githubusercontent.com/sparrowgrass-cyber/Sparrowgrass-Farm/main/KakaoTalk_20250405_030256895_01.jpg"
+          style="width:44px;height:44px;object-fit:cover;border-radius:10px;display:block;margin-bottom:4px;box-shadow:0 2px 6px rgba(0,0,0,0.2)">
         <div class="logo-title">참새풀농원</div>
         <div class="logo-sub">직거래 고객관리</div>
       </div>
@@ -777,8 +802,42 @@ function deleteProduct(i) {
   showToast('삭제되었습니다.'); renderProducts();
 }
 
+// ── 비밀번호 ──
+var PASSWORD = '369';
+function checkPassword() {
+  var saved = localStorage.getItem('farm_auth_time');
+  if (saved) {
+    var elapsed = Date.now() - parseInt(saved);
+    if (elapsed < 24 * 60 * 60 * 1000) {
+      document.getElementById('pw-screen').style.display='none';
+      loadFromSheet(); return;
+    }
+  }
+  document.getElementById('pw-screen').style.display='flex';
+}
+function submitPassword() {
+  var val = document.getElementById('pw-input').value;
+  if (val === PASSWORD) {
+    localStorage.setItem('farm_auth_time', Date.now().toString());
+    document.getElementById('pw-screen').style.display='none';
+    loadFromSheet();
+  } else {
+    document.getElementById('pw-error').style.display='block';
+    document.getElementById('pw-input').value='';
+    document.getElementById('pw-input').focus();
+  }
+}
+function onPwInput(val) {
+  document.getElementById('pw-error').style.display='none';
+  for (var i=0; i<3; i++) {
+    var dot = document.getElementById('dot'+i);
+    if (dot) dot.style.background = i < val.length ? '#ffaa44' : '#d6e8d2';
+  }
+}
+function pwKeydown(e) { if (e.key==='Enter') submitPassword(); }
+
 // ── 초기화 ──
-loadFromSheet();
+checkPassword();
 </script>
 </body>
 </html>
