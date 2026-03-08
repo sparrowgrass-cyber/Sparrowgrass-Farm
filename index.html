@@ -217,12 +217,25 @@ async function loadFromSheet() {
     showLoading(true);
     var res  = await fetch(GAS_URL);
     var data = await res.json();
-    customers = (data.customers||[]).map(function(c,i){
+
+    // 주문: ID를 문자열로 고정 보존 (Date.now() 대체 금지)
+    orders = (data.orders||[]).map(function(o, i){
+      var rawId = o['ID'] !== undefined && o['ID'] !== '' ? String(o['ID']) : 'order_'+i;
+      return { id: rawId, orderer:o['주문자']||'', name:o['이름(받는분)']||'', phone:o['전화번호']||'', address:o['주소']||'', items:parseItems(o['품목']||''), total:Number(o['합계'])||0, date:o['날짜']||'', memo:o['메모']||'', createdAt:o['등록일']||'' };
+    });
+
+    // 고객: 전화번호 기준 중복 제거 후 저장
+    var rawCustomers = (data.customers||[]).map(function(c,i){
       return { id:i+1, orderer:c['주문자']||'', name:c['이름(받는분)']||c['주문자']||'', phone:c['전화번호']||'', address:c['주소']||'', createdAt:c['등록일']||'' };
     });
-    orders = (data.orders||[]).map(function(o){
-      return { id:Number(o['ID'])||Date.now(), orderer:o['주문자']||'', name:o['이름(받는분)']||'', phone:o['전화번호']||'', address:o['주소']||'', items:parseItems(o['품목']||''), total:Number(o['합계'])||0, date:o['날짜']||'', memo:o['메모']||'', createdAt:o['등록일']||'' };
+    var seen = {};
+    customers = rawCustomers.filter(function(c){
+      var key = c.phone || (c.orderer+'_'+c.name);
+      if (seen[key]) return false;
+      seen[key] = true;
+      return true;
     });
+
     saveCustomers(customers); saveOrders(orders);
     showLoading(false); switchView(currentView);
   } catch(err) {
@@ -529,7 +542,7 @@ function submitOrder() {
       .catch(function(){ showToast('시트 저장 실패. 인터넷을 확인해주세요.','error'); });
     editOrderId=null;
   } else {
-    var newId=Date.now();
+    var newId = String(Date.now());
     orders.push(Object.assign({id:newId},saveForm,{total:total,createdAt:today()}));
     saveOrders(orders);
     postToSheet(Object.assign({action:'saveOrder',id:newId},payload))
