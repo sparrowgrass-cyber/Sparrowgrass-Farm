@@ -8,7 +8,7 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #ffe8d6; --card: #ffffff; --dark: #2d3a2e;
+    --bg: #f0f0f0; --card: #ffffff; --dark: #2d3a2e;
     --green: #7cb87a; --green-light: #e8f5e4;
     --orange: #f0956a; --orange-light: #fef0e8;
     --brown: #7a6a5a; --muted: #9aaa96;
@@ -380,7 +380,7 @@ function renderOrderForm() {
         '</div>'+
       '</div>'+
     '</div>'+
-    '<button class="btn-primary" onclick="submitOrder()">'+(editOrderId?'수정 완료':'🌾 주문 등록')+'</button>';
+    '<button class="btn-primary" onclick="submitOrder()">'+(editOrderId?'수정 완료':'🍅 주문 등록')+'</button>';
 
   renderItems();
 }
@@ -525,7 +525,10 @@ function submitOrder() {
 function renderHistory(search) {
   var filtered=orders.filter(function(o){
     return !search||(o.orderer||'').includes(search)||(o.name||'').includes(search)||(o.phone||'').includes(search)||(o.address||'').includes(search);
-  }).sort(function(a,b){ return b.id-a.id; });
+  }).sort(function(a,b){
+    if (b.date && a.date && b.date !== a.date) return b.date.localeCompare(a.date);
+    return b.id - a.id;
+  });
 
   var html='<div class="page-header"><h2 class="page-title">주문 내역</h2><span class="badge">총 '+orders.length+'건</span></div>'+
     '<div class="search-wrap"><input class="text-input" value="'+esc(search)+'" placeholder="🔍 이름, 전화번호, 주소 검색" oninput="renderHistory(this.value)"></div>';
