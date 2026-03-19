@@ -316,7 +316,7 @@ function switchView(v) {
     if (btn) btn.classList.toggle('active', id===v);
   });
   if (v==='newOrder')  renderOrderForm();
-  if (v==='history')   { historySearch=''; renderHistory(); }
+  if (v==='history')   { historySearch=''; showDelivered=false; renderHistory(); }
   if (v==='customers') { customerSearch=''; renderCustomers(); }
   if (v==='products')  renderProducts();
 }
@@ -571,28 +571,80 @@ function submitOrder() {
 // 📦 주문 내역
 // ════════════════════════════════════════
 var historySearch = '';
+var showDelivered = false;
+
+function getDeliveredMap() {
+  try { return JSON.parse(localStorage.getItem('farm_delivered_v2') || '{}'); } catch(e) { return {}; }
+}
+function setDeliveredMap(map) {
+  localStorage.setItem('farm_delivered_v2', JSON.stringify(map));
+}
+function markDelivered(id) {
+  if (!confirm('배송완료 처리하면 주문내역에서 숨겨집니다.\n구글 시트에는 계속 유지됩니다.')) return;
+  var map = getDeliveredMap();
+  map[String(id)] = Date.now();
+  setDeliveredMap(map);
+  showToast('배송완료 처리되었습니다. 🚚');
+  renderHistory();
+}
+function toggleDelivered() {
+  showDelivered = !showDelivered;
+  renderHistory();
+}
+function isDeliveredRecent(id) {
+  var map = getDeliveredMap();
+  var ts = map[String(id)];
+  if (!ts) return false;
+  var days3 = 3 * 24 * 60 * 60 * 1000;
+  return (Date.now() - ts) < days3;
+}
+function isDeliveredExpired(id) {
+  var map = getDeliveredMap();
+  var ts = map[String(id)];
+  if (!ts) return false;
+  var days3 = 3 * 24 * 60 * 60 * 1000;
+  return (Date.now() - ts) >= days3;
+}
 
 function renderHistory(search) {
   if (search !== undefined) historySearch = search;
-  var filtered=orders.filter(function(o){
+  var deliveredMap = getDeliveredMap();
+
+  var filtered = orders.filter(function(o){
     var s = historySearch;
-    return !s||(o.orderer||'').includes(s)||(o.name||'').includes(s)||(o.phone||'').includes(s)||(o.address||'').includes(s);
+    var matchSearch = !s||(o.orderer||'').includes(s)||(o.name||'').includes(s)||(o.phone||'').includes(s)||(o.address||'').includes(s);
+    // 3일 지난 배송완료는 완전히 숨김
+    if (isDeliveredExpired(o.id)) return false;
+    // 3일 이내 배송완료는 토글에 따라
+    if (isDeliveredRecent(o.id) && !showDelivered) return false;
+    return matchSearch;
   }).sort(function(a,b){
     if (b.date && a.date && b.date !== a.date) return b.date.localeCompare(a.date);
     return b.id - a.id;
   });
 
-  // 검색창은 처음 한 번만 그리고, 이후엔 결과만 갱신
+  var activeCount = orders.filter(function(o){ return !deliveredMap[String(o.id)]; }).length;
+
+  // 검색창+토글은 처음 한 번만 그리고, 이후엔 결과만 갱신
   var con = document.getElementById('view-history');
   var existingSearch = document.getElementById('history-search-input');
   if (!existingSearch) {
     con.innerHTML =
-      '<div class="page-header"><h2 class="page-title">주문 내역</h2><span class="badge" id="history-badge">총 '+orders.length+'건</span></div>'+
-      '<div class="search-wrap"><input id="history-search-input" class="text-input" value="" placeholder="🔍 이름, 전화번호, 주소 검색" oninput="renderHistory(this.value)"></div>'+
+      '<div class="page-header"><h2 class="page-title">주문 내역</h2><span class="badge" id="history-badge">배송대기 '+activeCount+'건</span></div>'+
+      '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">'+
+        '<input id="history-search-input" class="text-input" style="flex:1" value="" placeholder="🔍 이름, 전화번호, 주소 검색" oninput="renderHistory(this.value)">'+
+        '<button id="delivered-toggle-btn" onclick="toggleDelivered()" style="white-space:nowrap;padding:10px 14px;border-radius:10px;border:1.5px solid var(--border);background:white;font-size:13px;cursor:pointer;color:var(--muted)">배송완료 보기</button>'+
+      '</div>'+
       '<div id="history-results"></div>';
   } else {
     var badge = document.getElementById('history-badge');
-    if (badge) badge.textContent = '총 '+orders.length+'건';
+    if (badge) badge.textContent = '배송대기 '+activeCount+'건';
+    var btn = document.getElementById('delivered-toggle-btn');
+    if (btn) {
+      btn.textContent = showDelivered ? '배송완료 숨기기' : '배송완료 보기';
+      btn.style.color = showDelivered ? 'var(--orange)' : 'var(--muted)';
+      btn.style.borderColor = showDelivered ? 'var(--orange)' : 'var(--border)';
+    }
   }
 
   var html='';
@@ -602,13 +654,15 @@ function renderHistory(search) {
     for (var i=0;i<filtered.length;i++) {
       var o=filtered[i];
       var oid = String(o.id);
+      var isDelivered = isDeliveredRecent(oid);
       var ihtml='';
       for (var j=0;j<(o.items||[]).length;j++) {
         var it=o.items[j];
         var lt=it.price?(parseInt(it.price)*(parseInt(it.qty)||1)).toLocaleString()+'원':'';
         ihtml+='<div class="order-item-row"><span>'+esc(it.product)+' × '+it.qty+'</span><span style="color:var(--brown)">'+lt+'</span></div>';
       }
-      html+='<div class="order-card">'+
+      html+='<div class="order-card" style="'+(isDelivered?'opacity:0.5;border-left:4px solid #a8d5a2;':'')+'">'+
+        (isDelivered?'<div style="font-size:12px;color:var(--green);font-weight:600;margin-bottom:6px">✅ 배송완료</div>':'')+
         '<div class="order-top">'+
           '<div>'+
             '<div class="order-name">'+esc(o.orderer||o.name)+'</div>'+
@@ -621,6 +675,7 @@ function renderHistory(search) {
         '<div class="order-items">'+ihtml+'</div>'+
         (o.memo?'<div class="order-memo">📝 '+esc(o.memo)+'</div>':'')+
         '<div class="order-actions">'+
+          (!isDelivered?'<button style="padding:7px 14px;border-radius:8px;border:none;background:#a8d5a2;color:#2d3a2e;font-size:13px;font-weight:600;cursor:pointer" onclick="markDelivered(\''+oid+'\')">🚚 배송완료</button>':'')+
           '<button class="btn-gray-sm" onclick="startEditOrder(\''+oid+'\')">수정</button>'+
           '<button class="btn-red-sm" onclick="deleteOrder(\''+oid+'\')">삭제</button>'+
         '</div>'+
