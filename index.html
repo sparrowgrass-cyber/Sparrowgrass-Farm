@@ -171,14 +171,19 @@
 <script>
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbzTeHH_TaPTaHytQzQbh-aqCcJ1BzJoigRh3hQ0nrRtm7ck78dlw8Hxt_W9uZu-PRA52g/exec';
 
-// ── 제품 관리 (브라우저 저장) ──
+// ── 제품 관리 (구글 시트 저장) ──
 var DEFAULT_PRODUCTS = [
   { name: '대', price: 0 }, { name: '중', price: 0 },
   { name: '대중혼합', price: 0 }, { name: '작두콩차', price: 0 }
 ];
-function loadProducts() { try { var d=localStorage.getItem('farm_products'); return d ? JSON.parse(d) : null; } catch(e) { return null; } }
 function saveProductsLocal(d) { localStorage.setItem('farm_products', JSON.stringify(d)); }
-var products = loadProducts() || DEFAULT_PRODUCTS;
+function loadProductsLocal() { try { var d=localStorage.getItem('farm_products'); return d ? JSON.parse(d) : null; } catch(e) { return null; } }
+var products = loadProductsLocal() || DEFAULT_PRODUCTS;
+
+async function saveProductsToSheet(prods) {
+  saveProductsLocal(prods);
+  try { await postToSheet({ action: 'saveProducts', products: prods }); } catch(e) {}
+}
 
 // ── 고객/주문 캐시 ──
 function loadCustomers() { try { return JSON.parse(localStorage.getItem('farm_customers')||'[]'); } catch(e) { return []; } }
@@ -220,19 +225,28 @@ async function loadFromSheet() {
     var res  = await fetch(GAS_URL);
     var data = await res.json();
 
-    // 주문: ID 고정 + 완전 중복 제거 (같은 주문자+날짜+합계 중복 제거)
+    // 주문: ID 고정 + 완전 중복 제거
     var rawOrders = (data.orders||[]).map(function(o, i){
       var rawId = (o['ID'] !== undefined && o['ID'] !== '' && o['ID'] !== null) ? String(o['ID']).trim() : '';
       if (!rawId) rawId = 'order_'+i+'_'+Date.now();
-      return { id: rawId, orderer:o['주문자']||'', name:o['이름(받는분)']||'', phone:o['전화번호']||'', address:o['주소']||'', items:parseItems(o['품목']||''), total:Number(o['합계'])||0, date:o['날짜']||'', memo:o['메모']||'', createdAt:o['등록일']||'' };
+      return { id: rawId, orderer:o['주문자']||'', name:o['이름(받는분)']||'', phone:o['전화번호']||'', address:o['주소']||'', items:parseItems(o['품목']||''), total:Number(o['합계'])||0, date:o['날짜']||'', memo:o['메모']||'', createdAt:o['등록일']||'', deliveredAt:o['배송완료일']||'' };
     });
-    // ID 기준 중복 제거 (같은 ID면 첫 번째만 유지)
     var seenOrders = {};
     orders = rawOrders.filter(function(o){
       if (seenOrders[o.id]) return false;
       seenOrders[o.id] = true;
       return true;
     });
+
+    // 배송완료 정보를 시트 기반으로 localStorage에 동기화
+    var deliveredMap = {};
+    orders.forEach(function(o){
+      if (o.deliveredAt && String(o.deliveredAt).trim()) {
+        var ts = new Date(o.deliveredAt).getTime();
+        if (!isNaN(ts)) deliveredMap[String(o.id)] = ts;
+      }
+    });
+    localStorage.setItem('farm_delivered_v2', JSON.stringify(deliveredMap));
 
     // 고객: 전화번호 기준 중복 제거 후 저장
     var rawCustomers = (data.customers||[]).map(function(c,i){
@@ -245,6 +259,12 @@ async function loadFromSheet() {
       seen[key] = true;
       return true;
     });
+
+    // 제품: 시트에서 불러와 localStorage 동기화
+    if (data.products && data.products.length > 0) {
+      products = data.products.map(function(p){ return { name: String(p['제품명']||''), price: Number(p['가격'])||0 }; }).filter(function(p){ return p.name; });
+      saveProductsLocal(products);
+    }
 
     saveCustomers(customers); saveOrders(orders);
     showLoading(false); switchView(currentView);
@@ -581,9 +601,12 @@ function setDeliveredMap(map) {
 }
 function markDelivered(id) {
   if (!confirm('배송완료 처리하면 주문내역에서 숨겨집니다.\n구글 시트에는 계속 유지됩니다.')) return;
+  var deliveredAt = today();
   var map = getDeliveredMap();
   map[String(id)] = Date.now();
   setDeliveredMap(map);
+  postToSheet({ action: 'markDelivered', id: id, deliveredAt: deliveredAt })
+    .catch(function(){});
   showToast('배송완료 처리되었습니다. 🚚');
   renderHistory();
 }
@@ -893,7 +916,7 @@ function confirmAddProduct() {
   var price=parseInt(document.getElementById('np-price').value)||0;
   if (!name) { showToast('제품명을 입력해주세요.','error'); return; }
   if (products.find(function(p){ return p.name===name; })) { showToast('이미 등록된 제품명입니다.','error'); return; }
-  products.push({name:name,price:price}); saveProductsLocal(products);
+  products.push({name:name,price:price}); saveProductsToSheet(products);
   addingProduct=false; showToast(name+' 제품이 추가되었습니다! 🌿'); renderProducts();
 }
 
@@ -906,12 +929,12 @@ function confirmEditProduct(i) {
   var name=(document.getElementById('ep-name').value||'').trim();
   var price=parseInt(document.getElementById('ep-price').value)||0;
   if (!name) { showToast('제품명을 입력해주세요.','error'); return; }
-  products[i]={name:name,price:price}; saveProductsLocal(products);
+  products[i]={name:name,price:price}; saveProductsToSheet(products);
   editingProductIdx=-1; showToast('제품 정보가 수정되었습니다.'); renderProducts();
 }
 function deleteProduct(i) {
   if (!confirm(products[i].name+' 제품을 삭제할까요?')) return;
-  products.splice(i,1); saveProductsLocal(products);
+  products.splice(i,1); saveProductsToSheet(products);
   showToast('삭제되었습니다.'); renderProducts();
 }
 
