@@ -636,9 +636,7 @@ function renderHistory(search) {
   var filtered = orders.filter(function(o){
     var s = historySearch;
     var matchSearch = !s||(o.orderer||'').includes(s)||(o.name||'').includes(s)||(o.phone||'').includes(s)||(o.address||'').includes(s);
-    // 3일 지난 배송완료는 완전히 숨김
     if (isDeliveredExpired(o.id)) return false;
-    // 3일 이내 배송완료는 토글에 따라
     if (isDeliveredRecent(o.id) && !showDelivered) return false;
     return matchSearch;
   }).sort(function(a,b){
@@ -646,7 +644,32 @@ function renderHistory(search) {
     return b.id - a.id;
   });
 
-  var activeCount = orders.filter(function(o){ return !deliveredMap[String(o.id)]; }).length;
+  var activeCount = orders.filter(function(o){ return !deliveredMap[String(o.id)] && !isDeliveredExpired(o.id); }).length;
+
+  // 배송대기 주문만 모아서 품목별 합계 계산
+  var pendingOrders = orders.filter(function(o){
+    return !deliveredMap[String(o.id)] && !isDeliveredExpired(o.id);
+  });
+  var itemSummary = {};
+  pendingOrders.forEach(function(o){
+    (o.items||[]).forEach(function(it){
+      if (!it.product) return;
+      if (!itemSummary[it.product]) itemSummary[it.product] = 0;
+      itemSummary[it.product] += parseInt(it.qty) || 0;
+    });
+  });
+  var summaryKeys = Object.keys(itemSummary);
+  var summaryHtml = '';
+  if (summaryKeys.length > 0) {
+    summaryHtml = '<div style="background:white;border-radius:14px;padding:14px 16px;margin-bottom:12px;border:1.5px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,0.06)">'+
+      '<div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:10px;letter-spacing:0.5px">📦 배송대기 품목 합계</div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:8px">';
+    summaryKeys.forEach(function(name){
+      summaryHtml += '<div style="background:var(--green-light);border-radius:8px;padding:6px 12px;font-size:14px;font-weight:600;color:var(--dark)">'+
+        esc(name)+' <span style="color:var(--orange)">'+itemSummary[name]+'개</span></div>';
+    });
+    summaryHtml += '</div></div>';
+  }
 
   // 검색창+토글은 처음 한 번만 그리고, 이후엔 결과만 갱신
   var con = document.getElementById('view-history');
@@ -654,6 +677,7 @@ function renderHistory(search) {
   if (!existingSearch) {
     con.innerHTML =
       '<div class="page-header"><h2 class="page-title">주문 내역</h2><span class="badge" id="history-badge">배송대기 '+activeCount+'건</span></div>'+
+      '<div id="history-summary"></div>'+
       '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">'+
         '<input id="history-search-input" class="text-input" style="flex:1" value="" placeholder="🔍 이름, 전화번호, 주소 검색" oninput="renderHistory(this.value)">'+
         '<button id="delivered-toggle-btn" onclick="toggleDelivered()" style="white-space:nowrap;padding:10px 14px;border-radius:10px;border:1.5px solid var(--border);background:white;font-size:13px;cursor:pointer;color:var(--muted)">배송완료 보기</button>'+
@@ -669,6 +693,8 @@ function renderHistory(search) {
       btn.style.borderColor = showDelivered ? 'var(--orange)' : 'var(--border)';
     }
   }
+  var summaryEl = document.getElementById('history-summary');
+  if (summaryEl) summaryEl.innerHTML = summaryHtml;
 
   var html='';
   if (!filtered.length) {
