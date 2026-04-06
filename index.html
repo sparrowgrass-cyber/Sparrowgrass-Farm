@@ -394,22 +394,30 @@ function renderOrderForm() {
 
     '<div class="card">'+
       '<div class="card-title">👤 고객 정보'+(isNew?'<span class="badge new">신규 고객</span>':'')+'</div>'+
+
+      // 받는분 이름 (자동완성 주체)
       '<div style="margin-bottom:12px;position:relative">'+
-        '<label class="field-label">주문자 *</label>'+
-        '<input id="f-orderer" class="text-input" value="'+esc(orderForm.orderer)+'" placeholder="주문하신 분 이름" oninput="onOrdererInput(this.value)" onblur="hideAC()">'+
+        '<label class="field-label">받는분 이름 *</label>'+
+        '<input id="f-name" class="text-input" value="'+esc(orderForm.name||orderForm.orderer)+'" placeholder="받는분 이름 입력" oninput="onRecipientInput(this.value)" onblur="hideAC()">'+
         '<div id="autocomplete" class="autocomplete"></div>'+
       '</div>'+
 
-      '<div class="grid-2" style="margin-bottom:12px">'+
-        '<div><label class="field-label">이름 (받는분)</label><input id="f-name" class="text-input" value="'+esc(orderForm.name)+'" placeholder="주문자와 동일하면 비워두세요" oninput="orderForm.name=this.value"></div>'+
-        '<div><label class="field-label">전화번호 (받는분)</label>'+
-          '<div class="phone-wrap">'+
-            '<span class="phone-prefix">010</span>'+
-            '<input id="f-phone" class="text-input" value="'+esc(partialPhone(orderForm.phone))+'" placeholder="0000-0000" oninput="onPhoneInput(this.value)">'+
-          '</div>'+
+      // 전화번호·주소
+      '<div style="margin-bottom:12px">'+
+        '<label class="field-label">전화번호 (받는분)</label>'+
+        '<div class="phone-wrap">'+
+          '<span class="phone-prefix">010</span>'+
+          '<input id="f-phone" class="text-input" value="'+esc(partialPhone(orderForm.phone))+'" placeholder="0000-0000" oninput="onPhoneInput(this.value)">'+
         '</div>'+
       '</div>'+
       '<div style="margin-bottom:12px"><label class="field-label">배송 주소</label><input id="f-address" class="text-input" value="'+esc(orderForm.address)+'" placeholder="주소를 입력하세요" oninput="orderForm.address=this.value"></div>'+
+
+      // 주문자 (받는분과 다를 때만)
+      '<div style="margin-bottom:12px">'+
+        '<label class="field-label">주문자 <span style="font-size:11px;color:var(--muted);font-weight:400">(받는분과 다를 경우만 입력)</span></label>'+
+        '<input id="f-orderer" class="text-input" value="'+esc(orderForm.orderer===orderForm.name?'':orderForm.orderer)+'" placeholder="주문하신 분 이름" oninput="orderForm.orderer=this.value||orderForm.name">'+
+      '</div>'+
+
       '<div class="grid-2">'+
         '<div><label class="field-label">주문일</label><input id="f-date" class="text-input" type="date" value="'+orderForm.date+'" onchange="orderForm.date=this.value"></div>'+
         '<div><label class="field-label">메모</label><input id="f-memo" class="text-input" value="'+esc(orderForm.memo)+'" placeholder="특이사항" oninput="orderForm.memo=this.value"></div>'+
@@ -507,14 +515,15 @@ function addItem()         { orderForm.items.push({product:'',qty:1,price:''}); 
 function removeItem(i)     { orderForm.items.splice(i,1); renderItems(); }
 function updateItem(i,f,v) { orderForm.items[i][f]=v; updateTotal(); }
 
-// ── Autocomplete ──
-function onOrdererInput(val) {
-  orderForm.orderer = val;
+// ── Autocomplete (받는분 기준) ──
+function onRecipientInput(val) {
+  orderForm.name = val;
+  if (!orderForm.orderer || orderForm.orderer === orderForm.name) orderForm.orderer = val;
   var ac = document.getElementById('autocomplete');
   if (!ac) return;
   if (!val) { ac.classList.remove('show'); return; }
   var matches = customers.filter(function(c){
-    return (c.orderer||c.name).includes(val)||(c.phone||'').replace(/-/g,'').includes(val.replace(/-/g,''));
+    return (c.name||c.orderer||'').includes(val)||(c.orderer||'').includes(val)||(c.phone||'').replace(/-/g,'').includes(val.replace(/-/g,''));
   });
   if (!matches.length) { ac.classList.remove('show'); return; }
   var html='';
@@ -522,19 +531,26 @@ function onOrdererInput(val) {
     var m=matches[i];
     var cnt=orders.filter(function(o){ return o.phone===m.phone; }).length;
     html+='<div class="ac-item" onmousedown="selectCustomer(\''+esc(m.phone)+'\')">'+
-      '<div><div class="ac-name">'+esc(m.orderer||m.name)+'</div>'+
-      '<div class="ac-phone">'+esc(m.phone)+(m.name&&m.name!==m.orderer?' · 받는분: '+esc(m.name):'')+
+      '<div><div class="ac-name">'+esc(m.name||m.orderer)+'</div>'+
+      '<div class="ac-phone">'+esc(m.phone)+(m.orderer&&m.orderer!==m.name?' · 주문자: '+esc(m.orderer):'')+
       '</div></div><div class="ac-count">'+cnt+'회 주문</div></div>';
   }
   ac.innerHTML=html; ac.classList.add('show');
 }
+function onOrdererInput(val) { orderForm.orderer = val; }
 function hideAC() { setTimeout(function(){ var ac=document.getElementById('autocomplete'); if(ac) ac.classList.remove('show'); },160); }
 
 function selectCustomer(phone) {
   var c=customers.find(function(x){ return x.phone===phone; });
   if (!c) return;
-  orderForm.orderer=c.orderer||c.name; orderForm.name=c.name; orderForm.phone=c.phone; orderForm.address=c.address;
+  orderForm.name    = c.name || c.orderer;
+  orderForm.phone   = c.phone;
+  orderForm.address = c.address || '';
+  orderForm.orderer = c.orderer || c.name;
   renderOrderForm();
+  // 주문자 필드: 받는분과 같으면 비워서 표시 (placeholder 보이도록)
+  var fo = document.getElementById('f-orderer');
+  if (fo && orderForm.orderer === orderForm.name) fo.value = '';
 }
 function onPhoneInput(val) {
   var fmt = formatPhone(val);
@@ -545,14 +561,17 @@ function onPhoneInput(val) {
 function cancelEdit() { editOrderId=null; orderForm=emptyForm(); renderOrderForm(); }
 
 function submitOrder() {
-  if (!orderForm.orderer) { showToast('주문자 이름을 입력해주세요.','error'); return; }
+  // 받는분 이름 기준으로 validation
+  var recvName = orderForm.name || orderForm.orderer;
+  if (!recvName) { showToast('받는분 이름을 입력해주세요.','error'); return; }
+  if (!orderForm.orderer) orderForm.orderer = recvName;
+  if (!orderForm.name) orderForm.name = recvName;
   if (orderForm.items.some(function(i){ return !i.product||i.product==='__custom__'; })) { showToast('품목을 선택해주세요.','error'); return; }
 
-  var recvName  = orderForm.name  || orderForm.orderer;
   var recvPhone = orderForm.phone || '';
   var existing  = recvPhone
     ? customers.find(function(c){ return c.phone===recvPhone; })
-    : customers.find(function(c){ return !c.phone&&c.orderer===orderForm.orderer; });
+    : customers.find(function(c){ return !c.phone&&(c.name===recvName||c.orderer===orderForm.orderer); });
 
   if (!existing) {
     customers.push({ id:String(Date.now()), orderer:orderForm.orderer, name:recvName, phone:recvPhone, address:orderForm.address, createdAt:today() });
