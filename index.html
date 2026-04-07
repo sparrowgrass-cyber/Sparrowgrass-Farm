@@ -654,7 +654,7 @@ function renderHistory(search) {
 
   var filtered = orders.filter(function(o){
     var s = historySearch;
-    var matchSearch = !s||(o.orderer||'').includes(s)||(o.name||'').includes(s)||(o.phone||'').includes(s)||(o.address||'').includes(s);
+    var matchSearch = !s||(o.orderer||'').includes(s)||(o.name||'').includes(s)||(o.phone||'').includes(s)||(o.address||'').includes(s)||(o.memo||'').includes(s);
     if (isDeliveredExpired(o.id)) return false;
     if (isDeliveredRecent(o.id) && !showDelivered) return false;
     return matchSearch;
@@ -733,8 +733,8 @@ function renderHistory(search) {
         (isDelivered?'<div style="font-size:12px;color:var(--green);font-weight:600;margin-bottom:6px">✅ 배송완료</div>':'')+
         '<div class="order-top">'+
           '<div>'+
-            '<div class="order-name">'+esc(o.orderer||o.name)+'</div>'+
-            (o.name&&o.name!==(o.orderer||o.name)?'<div style="font-size:13px;color:var(--green);margin-top:2px">📦 받는분: '+esc(o.name)+'</div>':'')+
+            '<div class="order-name">'+esc(o.name||o.orderer)+'</div>'+
+            (o.orderer && o.orderer !== o.name ? '<div style="font-size:13px;color:var(--muted);margin-top:2px">주문자: '+esc(o.orderer)+'</div>':'')+
             (o.phone?'<div class="order-phone">📞 '+esc(o.phone)+'</div>':'')+
             (o.address?'<div class="order-addr">'+esc(o.address)+'</div>':'')+
           '</div>'+
@@ -998,15 +998,17 @@ function checkPassword() {
   setTimeout(function(){ document.getElementById('pb0').focus(); }, 100);
 }
 function submitPassword() {
-  var val = document.getElementById('pw-input').value;
+  var val = (document.getElementById('pb0').value||'')+(document.getElementById('pb1').value||'')+(document.getElementById('pb2').value||'');
   if (val === PASSWORD) {
     localStorage.setItem('farm_auth_time', Date.now().toString());
     document.getElementById('pw-screen').style.display='none';
     loadFromSheet();
   } else {
     document.getElementById('pw-error').style.display='block';
-    document.getElementById('pw-input').value='';
-    document.getElementById('pw-input').focus();
+    ['pb0','pb1','pb2'].forEach(function(id){
+      var b=document.getElementById(id); if(b){ b.value=''; b.style.borderColor='#e07070'; }
+    });
+    var first = document.getElementById('pb0'); if(first) first.focus();
   }
 }
 function onPwBox(i) {
