@@ -415,7 +415,7 @@ function renderOrderForm() {
       // 주문자 (받는분과 다를 때만)
       '<div style="margin-bottom:12px">'+
         '<label class="field-label">주문자 <span style="font-size:11px;color:var(--muted);font-weight:400">(받는분과 다를 경우만 입력)</span></label>'+
-        '<input id="f-orderer" class="text-input" value="'+esc(orderForm.orderer===orderForm.name?'':orderForm.orderer)+'" placeholder="주문하신 분 이름" oninput="orderForm.orderer=this.value||orderForm.name">'+
+        '<input id="f-orderer" class="text-input" value="'+esc(orderForm.orderer===orderForm.name?'':orderForm.orderer)+'" placeholder="주문하신 분 이름" oninput="onOrdererInput(this.value)">'+
       '</div>'+
 
       '<div class="grid-2">'+
@@ -518,7 +518,9 @@ function updateItem(i,f,v) { orderForm.items[i][f]=v; updateTotal(); }
 // ── Autocomplete (받는분 기준) ──
 function onRecipientInput(val) {
   orderForm.name = val;
-  if (!orderForm.orderer || orderForm.orderer === orderForm.name) orderForm.orderer = val;
+  // 주문자 칸이 비어있으면 받는분과 동일하게 유지
+  var fo = document.getElementById('f-orderer');
+  if (!fo || !fo.value.trim()) orderForm.orderer = val;
   var ac = document.getElementById('autocomplete');
   if (!ac) return;
   if (!val) { ac.classList.remove('show'); return; }
@@ -537,7 +539,10 @@ function onRecipientInput(val) {
   }
   ac.innerHTML=html; ac.classList.add('show');
 }
-function onOrdererInput(val) { orderForm.orderer = val; }
+function onOrdererInput(val) {
+  // 주문자 칸에 직접 입력한 경우
+  orderForm.orderer = val.trim() || orderForm.name;
+}
 function hideAC() { setTimeout(function(){ var ac=document.getElementById('autocomplete'); if(ac) ac.classList.remove('show'); },160); }
 
 function selectCustomer(phone) {
